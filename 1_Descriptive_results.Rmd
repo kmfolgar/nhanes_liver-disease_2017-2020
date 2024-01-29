@@ -1,0 +1,438 @@
+---
+title: "Descriptive_table"
+author: "Kevin Martinez-Folgar"
+date: "10/01/2023"
+output: word_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(survey)
+library(srvyr)
+library(tableone)
+library(janitor)
+library(broom)
+```
+
+```{r}
+## Open data
+data_nhanes_1 <- readRDS("proccessed_data/data_nhanes_processsed.rds")  %>%  
+                  mutate(Liver_inflammation=case_when(Liver_inflammation=="Yes" ~ 1,
+                                                     Liver_inflammation=="No" ~ 0),
+                        Liver_fat = case_when(Liver_fat=="Yes" ~ 1,
+                                              Liver_fat=="No" ~ 0),
+                        Liver_fibrosis=case_when(Liver_fibrosis=="Yes" ~ 1,
+                                                 Liver_fibrosis=="No" ~ 0),
+                        overall=1) %>% 
+    mutate(alcohol_variable=fct_relevel(alcohol_variable,
+                              "Lifetime abstainers", 
+                              "Former drinkers",
+                              "Moderate drinkers",
+                              "Heavy drinkers"),
+           bmi2= fct_relevel(bmi2, "Underweight",
+                                  "Normal",
+                                 "Overweight", 
+                                 "Obesity"),
+           education=fct_relevel(education,
+                                 "Completed High school or above",
+                                 "Less than high school"))
+```
+
+
+
+
+```{r}
+## Reference groups
+# Race - Non-Hispanic White, BMI Normal, Education More than high school, No diabetes, No Hepatitis, 
+data_nhanes_1$race <- relevel(as.factor(data_nhanes_1$race),ref ="Non-Hispanic White")
+data_nhanes_1$sex <- relevel(as.factor(data_nhanes_1$sex),ref ="Male")
+data_nhanes_1$age1 <- relevel(as.factor(data_nhanes_1$age1),ref ="20-39")
+data_nhanes_1$poverty <- relevel(as.factor(data_nhanes_1$poverty), ref="No")
+data_nhanes_1$access_healthcare <- relevel(as.factor(data_nhanes_1$access_healthcare), ref="Yes")
+data_nhanes_1$education <- relevel(as.factor(data_nhanes_1$education),ref ="Completed High school or above")
+#data_nhanes_1$education3 <- relevel(as.factor(data_nhanes_1$education3),ref ="Some college or above")
+data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
+data_nhanes_1$diabetes <- relevel(as.factor(data_nhanes_1$diabetes),ref ="No")
+data_nhanes_1$HepB_Status <- relevel(as.factor(data_nhanes_1$HepB_Status),ref ="No Hepatitis B")
+data_nhanes_1$HepC <- relevel(as.factor(data_nhanes_1$HepC),ref ="No Hepatitis C")
+data_nhanes_1$viral <- relevel(as.factor(data_nhanes_1$viral),ref ="No")
+data_nhanes_1$alcohol_variable  <- relevel(as.factor(data_nhanes_1$alcohol_variable), ref="Lifetime abstainers")
+```
+
+
+```{r}
+## Survey Design
+nhanesDesign <- svydesign(id      = ~SDMVPSU,
+                          strata  = ~SDMVSTRA,  
+                          weights = ~WTMECPRP,
+                          
+                          nest    = TRUE,
+                          data    = data_nhanes_1)
+
+Clean_Design <- subset(nhanesDesign, complete_case==1)
+```
+
+
+# Table 1
+
+
+```{r}
+# Function to calculate age-adjusted prevalences
+age_prevalences_nhanes <- function(k, y, group=race){
+  k <- rlang::sym(k)
+  data_nhanes_1 %>% 
+  as_survey_design(ids = SDMVPSU, strata = SDMVSTRA, 
+                           weights = WTMECPRP, nest = TRUE) %>% 
+  svystandardize(., by = ~ age1, over = ~race,
+                 # using NCHS standard population for ages 20-39, 40-59, 60+ https://www.cdc.gov/nchs/tutorials/NHANES/NHANESAnalyses/AgeStandardization/Task1b_SAS92.html
+                 population = c(77670, 72816, 45364),
+                 excluding.missing = ~ complete_case) %>% 
+    #filter(complete_case==1) %>% 
+    group_by({{group}}) %>% 
+    summarize(estimate = survey_mean(!!k == y, na.rm = TRUE, vartype = "ci", proportion = TRUE)) %>% 
+    mutate_if(is.numeric, function(x) round(100 * x, 1))
+}
+
+preproceso_tabla1 <- function(x, y){
+  x$estimate <- paste0(x$estimate, " (", x$estimate_low,", ",x$estimate_upp,")")
+  x %>% rename({{ y }} :=estimate) %>% dplyr::select(-estimate_low, -estimate_upp)
+}
+```
+
+```{r}
+age_prevalences_nhanes('Liver_inflammation', 1)
+```
+
+```{r}
+age_prevalences_nhanes('Liver_inflammation', 1) %>% 
+preproceso_tabla1('Liver_inflammation')
+```
+
+```{r}
+age_prevalences_nhanes('Liver_inflammation', 1, group = "overall") %>% 
+preproceso_tabla1('Liver_inflammation')
+```
+
+
+```{r}
+rm(byrace)
+
+# Start with the first table
+byrace <- age_prevalences_nhanes("Liver_fat", 1) %>% preproceso_tabla1("Liver_fat")
+
+# Bind the rest of the tables side-by-side
+byrace <- left_join(byrace, age_prevalences_nhanes("Liver_inflammation", 1) %>% preproceso_tabla1("Liver_inflammation"))
+byrace <- left_join(byrace, age_prevalences_nhanes("Liver_fibrosis", 1) %>% preproceso_tabla1("Liver_fibrosis"))
+byrace <- left_join(byrace, age_prevalences_nhanes("education", "Completed High school or above") %>% preproceso_tabla1("Completed High school or above"))
+byrace <- left_join(byrace, age_prevalences_nhanes("education", "Less than high school") %>% preproceso_tabla1("Less than high school"))
+byrace <- left_join(byrace, age_prevalences_nhanes("poverty", "Yes") %>% preproceso_tabla1("Poverty"))
+byrace <- left_join(byrace, age_prevalences_nhanes("access_healthcare", "No") %>% preproceso_tabla1("Lack of regular access to healthcare"))
+byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Underweight") %>% preproceso_tabla1("Underweight"))
+byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Normal") %>% preproceso_tabla1("Normal"))
+byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Overweight") %>% preproceso_tabla1("Overweight"))
+byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Obesity") %>% preproceso_tabla1("Obesity"))
+byrace <- left_join(byrace, age_prevalences_nhanes("diabetes", "Yes") %>% preproceso_tabla1("Diabetes"))
+byrace <- left_join(byrace, age_prevalences_nhanes("aware_liver_disease", "Yes") %>% preproceso_tabla1("Aware of liver disease"))
+byrace <- left_join(byrace, age_prevalences_nhanes("alcohol_variable", "Lifetime abstainers") %>% preproceso_tabla1("Lifetime abstainers"))
+byrace <- left_join(byrace, age_prevalences_nhanes("alcohol_variable", "Former drinkers") %>% preproceso_tabla1("Former drinkers"))
+byrace <- left_join(byrace, age_prevalences_nhanes("alcohol_variable", "Heavy drinkers") %>% preproceso_tabla1("Heavy drinkers"))
+byrace <- left_join(byrace, age_prevalences_nhanes("alcohol_variable", "Moderate drinkers") %>% preproceso_tabla1("Moderate drinkers"))
+byrace <- left_join(byrace, age_prevalences_nhanes("HepB_Status", "Immune") %>% preproceso_tabla1("Immune"))
+byrace <- left_join(byrace, age_prevalences_nhanes("HepB_Status", "Exposure to HBV") %>% preproceso_tabla1("Exposure to HBV"))
+byrace <- left_join(byrace, age_prevalences_nhanes("HepB_Status", "No Hepatitis B") %>% preproceso_tabla1("No Hepatitis B"))
+byrace <- left_join(byrace, age_prevalences_nhanes("HepC", "Current Infection") %>% preproceso_tabla1("Current Infection"))
+byrace <- left_join(byrace, age_prevalences_nhanes("HepC", "Positive Anti-HCV but no RNA") %>% preproceso_tabla1("Positive Anti-HCV but no RNA"))
+byrace <- left_join(byrace, age_prevalences_nhanes("HepC", "No Hepatitis C") %>% preproceso_tabla1("No Hepatitis C"))
+byrace <- left_join(byrace, age_prevalences_nhanes("viral", "Yes") %>% preproceso_tabla1("Viral"))
+
+# Now byrace should contain all the tables side-by-side
+
+byrace
+```
+
+
+```{r}
+# Start with the first table
+overall <- age_prevalences_nhanes("Liver_fat", 1, group = "overall") %>% 
+  preproceso_tabla1("Liver_fat") %>% 
+  select(-`"overall"`) %>% 
+  mutate(race="overall")
+
+# Use left_join to combine the rest of the tables
+overall <- overall %>% 
+  left_join(age_prevalences_nhanes("Liver_inflammation", 1, group = "overall") %>% 
+              preproceso_tabla1("Liver_inflammation") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+ 
+  left_join(age_prevalences_nhanes("Liver_fibrosis", 1, group = "overall") %>% 
+              preproceso_tabla1("Liver_fibrosis") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("education", "Completed High school or above", group = "overall") %>% 
+              preproceso_tabla1("Completed High school or above") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("education", "Less than high school", group = "overall") %>% 
+              preproceso_tabla1("Less than high school") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("poverty", "Yes", group = "overall") %>%
+              preproceso_tabla1("Poverty") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("access_healthcare", "No", group = "overall") %>% 
+              preproceso_tabla1("Lack of regular access to healthcare") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("bmi2", "Underweight", group = "overall") %>% 
+              preproceso_tabla1("Underweight") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("bmi2", "Normal", group = "overall") %>% 
+              preproceso_tabla1("Normal") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("bmi2", "Overweight", group = "overall") %>% 
+              preproceso_tabla1("Overweight") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("bmi2", "Obesity", group = "overall") %>% 
+              preproceso_tabla1("Obesity") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("diabetes", "Yes", group = "overall") %>% 
+              preproceso_tabla1("Diabetes") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("aware_liver_disease", "Yes", group = "overall") %>% 
+              preproceso_tabla1("Aware of liver disease") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("alcohol_variable", "Lifetime abstainers", group = "overall") %>% 
+              preproceso_tabla1("Lifetime abstainers") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("alcohol_variable", "Former drinkers", group = "overall") %>% 
+              preproceso_tabla1("Former drinkers") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("alcohol_variable", "Heavy drinkers", group = "overall") %>% 
+              preproceso_tabla1("Heavy drinkers") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("alcohol_variable", "Moderate drinkers", group = "overall") %>% 
+              preproceso_tabla1("Moderate drinkers") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("HepB_Status2", "Immune", group = "overall") %>% 
+              preproceso_tabla1("Immune") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("HepB_Status2", "Exposure to HBV", group = "overall") %>% 
+              preproceso_tabla1("Exposure to HBV") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("HepB_Status2", "No Hepatitis B", group = "overall") %>% 
+              preproceso_tabla1("No Hepatitis B") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("HepC", "Current Infection", group = "overall") %>% 
+              preproceso_tabla1("Current Infection") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("HepC", "Positive Anti-HCV but no RNA", group = "overall") %>% 
+              preproceso_tabla1("Positive Anti-HCV but no RNA") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("HepC", "No Hepatitis C", group = "overall") %>% 
+              preproceso_tabla1("No Hepatitis C") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("viral", "Yes", group = "overall") %>% 
+              preproceso_tabla1("Viral") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race")
+
+# Rename the 'overall' column to 'race'
+#overall <- overall %>% rename(race = "overall")
+overall
+```
+
+
+```{r}
+data_nhanes_1 %>% 
+  filter(complete_case==1) %>% 
+  tabyl(race) %>% 
+  adorn_totals() %>% 
+  mutate(race=ifelse(race=="Total", "overall", race)) %>% 
+  select(-percent) -> N
+
+N
+
+byrace %>% 
+  bind_rows(overall) %>% 
+  left_join(N) %>% 
+  relocate(n, .after = race)
+```
+
+```{r}
+byrace %>% 
+  bind_rows(overall) %>% 
+  left_join(N) %>% 
+  relocate(n, .after = race) %>% 
+  t() %>%
+  data.frame() %>%
+  row_to_names(row_number = 1) %>% 
+  select(Hispanic, `Non-Hispanic Asian`, `Non-Hispanic Black`, `Non-Hispanic White`, `Other Race`, overall) %>% 
+  write.csv("plots_tables/table1_2.csv")
+```
+
+
+## Plot Prevalences
+
+```{r}
+readRDS("proccessed_data/table3.rds") -> table3
+table3 <- cbind(models = rownames(table3), table3)
+rownames(table3) <- 1:nrow(table3)
+
+models1 <- c("model_1a", "model_2a","model_3a")
+
+table3 %>% 
+  filter(models %in% models1) %>% 
+  pivot_longer(cols = c("Hispanic", "Non-Hispanic Asian", "Non-Hispanic Black", "Other Race"),
+                                                        names_to = "race",values_to = "label") %>% 
+  mutate(cat=case_when(models=="model_1a" ~ "Hepatic Inflammation",
+                       models=="model_2a" ~ "Hepatic Steatosis",
+                       models=="model_3a" ~ "Hepatic Fibrosis"),
+         p="aPR=") %>%
+  unite(label1, p, label, sep="") %>% 
+  select(-models) -> table3
+  
+t1  <- age_prevalences_nhanes("Liver_inflammation", 1) %>% mutate(cat="Hepatic Inflammation")
+t2  <- age_prevalences_nhanes("Liver_fat", 1)  %>% mutate(cat="Hepatic Steatosis") 
+t3  <- age_prevalences_nhanes("Liver_fibrosis", 1) %>% mutate(cat="Hepatic Fibrosis")
+
+t1
+t2
+t3
+```
+
+
+```{r}
+## Plot
+list(t1 ,t2 ,t3) %>%  
+  reduce(bind_rows) %>%  
+  #filter(race!="Other Race") %>% 
+  left_join(table3) %>% 
+  mutate(label1=replace_na(label1, "aPR=1 (Ref)")) %>% 
+  mutate(cat=case_when(cat=="Hepatic Steatosis" ~ "Hepatic \nSteatosis",
+                       cat=="Hepatic Inflammation" ~ "Hepatic \nInflammation",
+                       cat=="Hepatic Fibrosis" ~ "Hepatic \nFibrosis")) %>% 
+  mutate(race=fct_relevel(race, "Hispanic", "Non-Hispanic Asian", "Non-Hispanic White", "Non-Hispanic Black", "Other Race"), 
+         cat=fct_relevel(cat, "Hepatic \nSteatosis", "Hepatic \nInflammation", "Hepatic \nFibrosis")) %>%  
+  ggplot(aes(x=cat, y=estimate, fill=race)) + 
+  geom_bar(stat="identity", position=position_dodge(.9), color="black") + 
+  scale_fill_brewer(palette="Set2") + 
+  geom_errorbar(aes(ymin=estimate_low, ymax=estimate_upp), width=.2, 
+                position=position_dodge(.9)) + 
+  geom_text(aes(label = label1, x = cat, y = estimate), position = position_dodge(width = .9), hjust=-0.1, angle=90, vjust=-0.9) +
+  scale_y_continuous(expand = expansion(mult = c(0,0.1)), limits = c(0,36),sec.axis=dup_axis(name = "")) +
+  #ylim(0,39) +
+  theme_classic() + 
+  theme(legend.position = "bottom") + 
+  theme(text = element_text(size=20, color="black"),
+        axis.text.x = element_text(size = 18, color="black"), 
+        axis.text.y = element_text(size = 18, color="black"),
+        plot.title = element_text(size=20),
+        legend.text = element_text(size=20)) + 
+  guides(fill=guide_legend(nrow=2,byrow=TRUE)) + 
+  labs(y="Age-adjusted Prevalence of Disease", x="", 
+       fill="Race/Ethnicity", 
+       #title="Age-Adjusted Prevalence of Hepatic Steatosis, Inflammation, and Fibrosis and Prevalence Ratios \n(95% Confidence Intervals) for the Association \nbetween Race/Ethnicity with Liver Disease outcomes in the U.S. Population \n(NHANES 2017- March 2020)", 
+       caption ="*Prevalence Ratios are age- and gender- adjusted")
+
+ggsave("plots_tables/Figure 1_prevalence_plot.png", scale=1.4, width = 12, height = 7)
+```
+
+```{r}
+
+## Plot
+list(t1 ,t2 ,t3) %>%  
+  reduce(bind_rows) %>%  
+  #filter(race!="Other Race") %>% 
+  left_join(table3) %>% 
+  mutate(label1=replace_na(label1, "aPR=1 (Ref)")) %>% 
+  mutate(cat=case_when(cat=="Hepatic Steatosis" ~ "Hepatic \nSteatosis",
+                       cat=="Hepatic Inflammation" ~ "Hepatic \nInflammation",
+                       cat=="Hepatic Fibrosis" ~ "Hepatic \nFibrosis")) %>% 
+  mutate(race=fct_relevel(race, "Hispanic", "Non-Hispanic Asian", "Non-Hispanic White", "Non-Hispanic Black", "Other Race"), 
+         cat=fct_relevel(cat, "Hepatic \nSteatosis", "Hepatic \nInflammation", "Hepatic \nFibrosis")) %>%  
+  ggplot(aes(x=cat, y=estimate, fill=race)) + 
+  geom_bar(stat="identity", position=position_dodge(.9), color="black") + 
+  scale_fill_brewer(palette="Set2") + 
+  geom_errorbar(aes(ymin=estimate_low, ymax=estimate_upp), width=.2, 
+                position=position_dodge(.9)) + 
+  #geom_text(aes(label = label1, x = cat, y = estimate), position = position_dodge(width = .9), hjust=-0.1, angle=90, vjust=-0.9) +
+  scale_y_continuous(expand = expansion(mult = c(0,0.1)), limits = c(0,36),sec.axis=dup_axis(name = "")) +
+  #ylim(0,39) +
+  theme_classic() + 
+theme(legend.position = "bottom",
+        text = element_text(size=24, face="bold", color="black"),
+        axis.text.x = element_text(size = 22, face="bold", color="black"), 
+        axis.text.y = element_text(size = 22, face="bold", color="black"),
+        plot.title = element_text(size=26, face="bold"),
+        legend.text = element_text(size=22, face="bold")) + 
+  guides(fill=guide_legend(nrow=2, byrow=TRUE)) + 
+  labs(y="Age-adjusted Prevalence of Disease", x="", 
+      #caption ="*Prevalence Ratios are age- and gender- adjusted",
+       fill="Race/Ethnicity" 
+       #title="Age-Adjusted Prevalence of Hepatic Steatosis, Inflammation, and Fibrosis and Prevalence Ratios \n(95% Confidence Intervals) for the Association \nbetween Race/Ethnicity with Liver Disease outcomes in the U.S. Population \n(NHANES 2017- March 2020)", 
+       )
+
+ggsave("plots_tables/Figure 1_prevalence_plot2.png", scale=1.4, width = 12, height = 7)
+```
+
+
+## Sensitivity Analysis with Hip/Waist Ratio
+
+```{r}
+summary(nhanes_2017_2020$waist_to_hip)
+```
+
+
+```{r}
+nhanes_2017_2020 %>% 
+  ggplot(aes(x=waist_to_hip, y=bmi, color=bmi2)) +
+  geom_point() +
+  facet_wrap(~sex)
+```
+```{r}
+nhanes_2017_2020 %>% 
+  ggplot(aes(x=waist_to_hip, y=bmi, color=bmi2)) +
+  geom_point() +
+  facet_wrap(~race)
+```
+
+
+```{r}
+nhanes_2017_2020 %>% 
+  ggplot(aes(x=waist_to_hip, y=bmi, color=Liver_fat)) +
+  geom_point() +
+  facet_wrap(~race)
+```
+
+```{r}
+age_prevalences_nhanes('waist_to_hip_cat', "More than 1") %>% 
+preproceso_tabla1('More than 1')
+```
+
+```{r}
+age_prevalences_nhanes('waist_to_hip_cat', "More than 1", group = "overall") %>% 
+preproceso_tabla1('More than 1')
+```
+```
+

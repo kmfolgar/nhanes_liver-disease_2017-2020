@@ -1,0 +1,686 @@
+---
+title: "NHANES 2017-2020 Data Analysis"
+output: html_document
+---
+
+## Introduction
+
+This Rmd file aims to validate the creation of each variable in the NHANES 2017-2020 dataset.
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(haven)
+library(janitor)
+library(nhanesA)
+```
+
+## Load NHANES 2017-2020 Data
+
+```{r load_data}
+## Demographics 
+demo_p <- read_xpt("data/P_DEMO.XPT") %>% 
+            select(SEQN, RIDAGEYR, RIAGENDR, RIDRETH3, DMDEDUC2, INDFMPIR, 
+                   RIDSTATR, SDMVPSU, SDMVSTRA, WTMECPRP) %>% 
+            nhanesTranslate("P_DEMO", colnames = colnames(.), data=.)
+
+saveRDS(demo_p, "data/translated_nhanes/demo_p.rds")
+
+
+## BMI
+bmx_p <- read_xpt("data/P_BMX.XPT") %>% 
+          select(SEQN, BMXBMI, BMXWAIST, BMXHIP) #%>% 
+          #nhanesTranslate("BMX_J", colnames = colnames(.), data=.)
+
+saveRDS(bmx_p, "data/translated_nhanes/bmx_p.rds")
+
+## Diabetes
+diq_p <- read_xpt("data/P_DIQ.XPT") %>% 
+          select(SEQN, DIQ010, DIQ050, DIQ070) %>% 
+          nhanesTranslate("P_DIQ", colnames = colnames(.), data=.)
+
+saveRDS(diq_p, "data/translated_nhanes/diq_p.rds")
+
+## Glycohemoglobin
+ghb_p <- read_xpt("data/P_GHB.XPT") %>% 
+          select(SEQN, LBXGH) #%>% 
+            #nhanesTranslate("GHB_J", colnames = colnames(.), data=.)
+
+saveRDS(ghb_p, "data/translated_nhanes/ghb_p.rds")
+
+## Alcohol Use Questionnaire
+alq_p <-  read_xpt("data/P_ALQ.XPT") %>% 
+            select(SEQN, ALQ121, ALQ130, ALQ142, ALQ111, ALQ270) %>% 
+            nhanesTranslate("P_ALQ", colnames = colnames(.), data=.)
+
+saveRDS(alq_p, "data/translated_nhanes/alq_p.rds")
+
+## Hepatitis B: Core antibody, Surface antigen, and Hepatitis D antibody
+hep_b_1 <- read_xpt("data/P_HEPBD.XPT") %>% 
+            select(SEQN, LBXHBC, LBDHBG) %>% 
+            nhanesTranslate("P_HEPBD", colnames = colnames(.), data=.)
+
+saveRDS(hep_b_1, "data/translated_nhanes/hep_b_1.rds")
+
+## Hepatitis B: Surface Antibody
+hep_b_2 <- read_xpt("data/P_HEPB_S.XPT") %>% 
+            select(SEQN, LBXHBS) %>% 
+            nhanesTranslate("P_HEPB_S", colnames = colnames(.), data=.)
+
+saveRDS(hep_b_2, "data/translated_nhanes/hep_b_2.rds")
+
+
+## Hepatitis C: RNA (HCV-RNA), Confirmed Antibody (INNO-LIA), & Genotype 
+hep_c <- read_xpt("data/P_HEPC.XPT") %>% 
+          select(SEQN, LBDHCI) %>% 
+          nhanesTranslate("P_HEPC", colnames = colnames(.), data=.)
+
+saveRDS(hep_c, "data/translated_nhanes/hep_c.rds")
+
+## Standard Biochemistry Profile
+biopro_p <- read_xpt("data/P_BIOPRO.XPT") %>% 
+              select(SEQN, LBXSATSI, LBXSASSI) #%>% 
+              #nhanesTranslate("BIOPRO_J", colnames = colnames(.), data=.)
+
+saveRDS(biopro_p, "data/translated_nhanes/biopro_p.rds")
+
+## Liver Ultrasound Transient Elastography
+lux_p <- read_xpt("data/P_LUX.XPT") %>%
+          select(SEQN, LUXSMED, LUXCAPM, LUAXSTAT) %>% 
+          nhanesTranslate("P_LUX", colnames = colnames(.), data=.)
+
+saveRDS(lux_p, "data/translated_nhanes/lux_p.rds")
+
+## Hospital Utilization & Access to Care
+huq_p <- read_xpt("data/P_HUQ.XPT") %>% 
+          select(SEQN, HUQ030) %>% 
+          nhanesTranslate("P_HUQ", colnames = colnames(.), data=.)
+
+saveRDS(huq_p, "data/translated_nhanes/huq_p.rds")
+
+## Health Insurance
+hiq_p <- read_xpt("data/P_HIQ.XPT") %>% 
+          select(SEQN, HIQ011) %>% 
+          nhanesTranslate("P_HIQ", colnames = colnames(.), data=.)
+
+saveRDS(hiq_p, "data/translated_nhanes/hiq_p.rds")
+
+
+mcq_p <- read_xpt("data/P_MCQ.XPT") %>% 
+          select(SEQN,MCQ160L) %>% 
+          nhanesTranslate("P_MCQ", colnames = colnames(.), data=.)
+
+saveRDS(mcq_p, "data/translated_nhanes/mcq_p.rds")
+
+
+demo_p %>% 
+  left_join(bmx_p, by="SEQN") %>% 
+  left_join(diq_p, by="SEQN") %>% 
+  left_join(ghb_p, by="SEQN") %>% 
+  left_join(alq_p, by="SEQN") %>% 
+  left_join(hep_b_1, by="SEQN") %>% 
+  left_join(hep_b_2, by="SEQN") %>%
+  left_join(hep_c, by="SEQN") %>%
+  left_join(biopro_p, by="SEQN") %>%
+  left_join(huq_p, by="SEQN") %>% 
+  left_join(hiq_p, by="SEQN") %>% 
+  left_join(mcq_p, by="SEQN") %>% 
+  left_join(lux_p, by="SEQN") -> nhanes
+
+rm(list = ls()[grepl("_", ls())])
+```
+
+```{r}
+nhanes_2017_2020 <- nhanes
+```
+
+```{r}
+nhanes %>% 
+  saveRDS("proccessed_data/data_nhanes_original.rds")
+```
+
+
+## Create and Validate Variables
+
+### Age Categories
+
+```{r age_categories}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(age1 = case_when(
+    RIDAGEYR >= 20 & RIDAGEYR < 40 ~ "20-39",
+    RIDAGEYR >= 40 & RIDAGEYR < 60 ~ "40-59",
+    RIDAGEYR >= 60 ~ "60+"
+  ))
+
+tabyl(nhanes_2017_2020$age1)
+```
+
+### Gender
+
+```{r gender}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(sex = RIAGENDR)
+
+tabyl(nhanes_2017_2020$sex)
+```
+
+### Race/Ethnicity
+
+```{r race_ethnicity}
+# Your code for creating the 'race' variable
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(race = case_when(
+    RIDRETH3 == "Non-Hispanic White" ~ "Non-Hispanic White",
+    RIDRETH3 == "Mexican American" ~ "Hispanic",
+    RIDRETH3 == "Other Hispanic" ~ "Hispanic",
+    RIDRETH3 == "Non-Hispanic Black" ~ "Non-Hispanic Black",
+    RIDRETH3 == "Non-Hispanic Asian" ~ "Non-Hispanic Asian",
+    RIDRETH3 == "Other Race - Including Multi-Rac" ~ "Other Race"
+  ))
+
+tabyl(nhanes_2017_2020$race)
+```
+
+### Education (3 Categories)
+
+```{r education3}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(education3 = case_when(
+    DMDEDUC2 == "Less than 9th grade" ~ "Less than high school",
+    DMDEDUC2 == "9-11th grade (Includes 12th grad" ~ "Less than high school",
+    DMDEDUC2 == "High school graduate/GED or equi" ~ "Completed High school",
+    DMDEDUC2 == "Some college or AA degree" ~ "Some college or above",
+    DMDEDUC2 == "College graduate or above" ~ "Some college or above",
+    DMDEDUC2 == "Don't Know" | DMDEDUC2 == "Refuse" ~ NA_character_
+  ))
+
+tabyl(nhanes_2017_2020$education3)
+```
+
+### Education
+
+```{r education}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(education = case_when(
+    DMDEDUC2 == "Less than 9th grade" ~ "Less than high school",
+    DMDEDUC2 == "9-11th grade (Includes 12th grad" ~ "Less than high school",
+    DMDEDUC2 == "High school graduate/GED or equi" ~ "Completed High school or above",
+    DMDEDUC2 == "Some college or AA degree" ~ "Completed High school or above",
+    DMDEDUC2 == "College graduate or above" ~ "Completed High school or above",
+    DMDEDUC2 == "Don't Know" | DMDEDUC2 == "Refuse" ~ NA_character_
+  ))
+
+tabyl(nhanes_2017_2020$education)
+```
+
+### Poverty 
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(poverty = case_when(
+    INDFMPIR < 2 ~ "Yes",
+    INDFMPIR >= 2 ~ "No"
+  ))
+
+tabyl(nhanes_2017_2020$poverty)
+```
+
+### BMI 
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(bmi = BMXBMI)
+
+summary(nhanes_2017_2020$bmi)
+
+```
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(bmi2 = case_when(BMXBMI<18.5              ~ "Underweight",
+                       BMXBMI>=18.5 & BMXBMI<25 ~ "Normal",
+                       BMXBMI>=25   & BMXBMI<30 ~ "Overweight",
+                       BMXBMI>=30               ~ "Obesity")) 
+
+tabyl(nhanes_2017_2020$bmi2)
+```
+
+
+### Waist-to-Hip Ratio
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>% 
+  mutate(waist_to_hip_valid=if_else(!is.na(BMXWAIST) & !is.na(BMXHIP),1,0)) %>% 
+  mutate(waist_to_hip = if_else(waist_to_hip_valid==1, BMXWAIST/BMXHIP, NA))
+
+#tabyl(nhanes_2017_2020$waist_to_hip)
+
+summary(nhanes_2017_2020$waist_to_hip)
+```
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>% 
+  mutate(waist_to_hip_cat=case_when(waist_to_hip_valid==1 & waist_to_hip>=1 ~ "More than 1",
+                                    waist_to_hip_valid==1 & waist_to_hip<=1 ~ "Less than 1")) 
+
+tabyl(nhanes_2017_2020$waist_to_hip_cat)
+```
+
+
+
+### Health Insurance
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(health_insurance = case_when(
+    HIQ011 == "No" ~ "No",
+    HIQ011 == "Yes" ~ "Yes"
+  ))
+
+tabyl(nhanes_2017_2020$health_insurance)
+```
+### Regular Access to Healthcare
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(regular_healthcare = case_when(
+    HUQ030 == "There is no place" ~ "No",
+    HUQ030 == "There is more than one place" | HUQ030 == "Yes" ~ "Yes"
+  ))
+
+tabyl(nhanes_2017_2020$regular_healthcare)
+
+```
+
+### Access to Healthcare
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(access_healthcare = case_when(health_insurance == "Yes" & regular_healthcare == "Yes" ~ "Yes", 
+                                       health_insurance=="No" | regular_healthcare=="No" ~ "No"))
+
+tabyl(nhanes_2017_2020$access_healthcare)
+
+```
+
+
+### Diabetes by Doctor
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(Diabetes_Doctor = case_when(
+    DIQ010 == "Yes" ~ "Yes",
+    DIQ010 == "No" ~ "No",
+    DIQ010 == "Borderline" ~ "No"))
+
+tabyl(nhanes_2017_2020$Diabetes_Doctor)
+
+```
+
+### Diabetes by Medication
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(Diabetes_Meds = case_when(
+    DIQ050 == "Yes" | DIQ070 == "Yes" ~ "Yes",
+    DIQ050 == "No" & DIQ070 == "No" ~ "No"))
+
+tabyl(nhanes_2017_2020$Diabetes_Meds)
+
+```
+
+
+### Diabetes by Lab
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(Diabetes_Lab = case_when(
+    LBXGH >= 6.5 ~ "Yes",
+    LBXGH < 6.5 ~ "No"))
+
+tabyl(nhanes_2017_2020$Diabetes_Lab)
+
+```
+
+### Diabetes Prevalence
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(diabetes = case_when(
+    Diabetes_Doctor == "Yes" | Diabetes_Meds == "Yes" | Diabetes_Lab == "Yes" ~ "Yes",
+    Diabetes_Doctor == "No" & Diabetes_Lab == "No" ~ "No"))
+
+tabyl(nhanes_2017_2020$diabetes)
+
+```
+
+### Aware of Liver Disease
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(aware_liver_disease = case_when(
+    MCQ160L == "Yes" ~ "Yes",
+    MCQ160L == "No" ~ "No"
+  ))
+
+tabyl(nhanes_2017_2020$aware_liver_disease)
+
+```
+
+### Hepatitis B Status
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(HepB_Status2 = case_when(
+    LBXHBC == "Negative" & LBXHBS == "Negative" ~ "No Hepatitis B",
+    LBXHBC == "Positive" & LBXHBS == "Negative" ~ "Past Hepatitis B",
+    LBXHBC == "Negative" & LBXHBS == "Positive" ~ "Immune",
+    LBXHBC == "Positive" & LBDHBG == "Positive" ~ "Chronic Hepatitis B"),
+
+HepB_Status = case_when(HepB_Status2=="No Hepatitis B" ~ "No Hepatitis B",
+                        HepB_Status2=="Past Hepatitis B" ~ "Exposure to HBV",
+                        HepB_Status2=="Chronic Hepatitis B" ~ "Exposure to HBV",
+                       HepB_Status2=="Immune" ~ "Immune"))
+
+tabyl(nhanes_2017_2020$HepB_Status2)
+tabyl(nhanes_2017_2020$HepB_Status)
+
+```
+
+### Hepatitis C
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(HepC = case_when(
+    LBDHCI == "Positive" ~ "Positive Anti-HCV but no RNA",
+    LBDHCI == "Negative" | LBDHCI == "Negative Screening HCV Antibody" ~ "No Hepatitis C",
+    LBDHCI == "Positive HCV RNA" ~ "Current Infection"
+  ))
+
+tabyl(nhanes_2017_2020$HepC)
+
+```
+
+
+### Viral Hepatitis
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(viral = case_when(
+    HepB_Status == "Past Hepatitis B" | 
+      HepB_Status == "Chronic Hepatitis B" | 
+      HepC == "Positive Anti-HCV but no RNA" | 
+      HepC == "Current Infection" ~ "Yes",
+    
+    (HepB_Status == "No Hepatitis B" | HepB_Status == "Immune") & HepC == "No Hepatitis C" ~ "No"))
+
+tabyl(nhanes_2017_2020$viral)
+
+```
+
+
+### Alcohol Factor
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(alcohol_factor = case_when(
+    ALQ121 == "Every day" ~ 7,
+    ALQ121 == "Nearly every day" ~ 5.5,
+    ALQ121 == "3 to 4 times a week" ~ 3.5,
+    ALQ121 == "2 times a week" ~ 2,
+    ALQ121 == "Once a week" ~ 1,
+    ALQ121 == "2 to 3 times a month" ~ 0.625,
+    ALQ121 == "Once a month" ~ 0.25,
+    ALQ121 == "7 to 11 times in the last year" ~ 0.20,
+    ALQ121 == "3 to 6 times in the last year" ~ 0.10,
+    ALQ121 == "1 to 2 times in the last year" ~ 0.052
+  ))
+
+tabyl(nhanes_2017_2020$alcohol_factor)
+```
+
+
+
+### Alcohol Times
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(alcohol_times = if_else(ALQ130 == 777 | ALQ130 == 999, NA_real_, ALQ130))
+
+tabyl(nhanes_2017_2020$alcohol_times)
+
+```
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(alcohol_times = if_else(ALQ130 == 777 | ALQ130 == 999, NA_real_, ALQ130))
+
+nhanes_2017_2020 %>% 
+  tabyl(alcohol_factor,alcohol_times)
+
+```
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>% 
+  mutate(alcohol_drinks_week = (alcohol_times * alcohol_factor))
+         
+summary(nhanes_2017_2020$alcohol_drinks_week)         
+```
+
+### Alcohol Drinks Per Week 
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(alcohol_drinks_day = alcohol_drinks_week/7)
+
+summary(nhanes_2017_2020$alcohol_drinks_day)       
+```
+
+### Binge drinking & Heavy drinkers
+```{r}
+# binge drinking (>5 drinks in a single day per month for males and less than 4 drinks in a single day per month for females) 
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(binge_freq = case_when(ALQ142=="Every day" |
+                                  ALQ142=="Nearly every day" |
+                                  ALQ142=="3 to 4 times a week" |
+                                  ALQ142=="2 times a week" |
+                                  ALQ142=="Once a week" |
+                                  ALQ142=="2 to 3 times a month" |
+                                  ALQ142=="Once a month" ~ "Yes",
+                                
+                               ALQ142=="7 to 11 times in the last year" |
+                               ALQ142=="3 to 6 times in the last year" |
+                               ALQ142=="1 to 2 times in the last year" ~ "No"), 
+         heavy_drinkers = case_when(binge_freq=="Yes" |
+    (sex == "Female" & alcohol_drinks_day > 2) | 
+      (sex == "Male" & alcohol_drinks_day > 3) ~ 1))
+
+tabyl(nhanes_2017_2020$heavy_drinkers)
+```
+
+
+### Moderate Drinkers
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(moderate_drinkers = case_when(
+    ((sex == "Female" & alcohol_drinks_day <= 2) | 
+    (sex == "Male" & alcohol_drinks_day <= 3)) &
+      is.na(heavy_drinkers) ~ 1))
+
+tabyl(nhanes_2017_2020$moderate_drinkers)
+```
+```{r}
+nhanes_2017_2020 %>% 
+  filter(binge_freq=="Yes") %>% 
+  tabyl(heavy_drinkers,moderate_drinkers)
+```
+
+
+### Alcohol variable
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(alcohol_variable = case_when(
+    ALQ111 == "No" ~ "Lifetime abstainers",
+    ALQ111=="Yes" & ALQ121=="Never in the last year" ~ "Former drinkers",
+    heavy_drinkers == 1 ~ "Heavy drinkers",
+    moderate_drinkers == 1 ~ "Moderate drinkers",
+  ))
+
+tabyl(nhanes_2017_2020$alcohol_variable)
+
+```
+
+```{r}
+nhanes_2017_2020 %>% 
+tabyl(moderate_drinkers,alcohol_variable)
+```
+
+
+```{r}
+nhanes_2017_2020 %>% 
+  tabyl(ALQ121,alcohol_variable)
+```
+
+### Elevated ALT
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(ALT_elevated = case_when(
+    (LBXSATSI >= 31 & RIAGENDR == "Female") | (LBXSATSI >= 40 & RIAGENDR == "Male") ~ "Yes",
+    (LBXSATSI < 31 & RIAGENDR == "Female") | (LBXSATSI < 40 & RIAGENDR == "Male") ~ "No"
+  ))
+
+tabyl(nhanes_2017_2020$ALT_elevated)
+
+```
+
+### Elevated AST
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(AST_elevated = case_when(
+    (LBXSASSI >= 31 & RIAGENDR == "Female") | (LBXSASSI >= 37 & RIAGENDR == "Male") ~ "Yes",
+    (LBXSASSI < 31 & RIAGENDR == "Female") | (LBXSASSI < 37 & RIAGENDR == "Male") ~ "No"
+  ))
+
+tabyl(nhanes_2017_2020$AST_elevated)
+
+```
+
+
+### Liver Fibrosis
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(Liver_fibrosis = case_when(
+    LUXSMED >= 8.6 & LUAXSTAT == "Complete" ~ "Yes",
+    LUXSMED < 8.6 & LUAXSTAT == "Complete" ~ "No"
+  ))
+
+tabyl(nhanes_2017_2020$Liver_fibrosis)
+
+```
+
+
+### Liver Fat
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(Liver_fat = case_when(
+    LUXCAPM >= 311 & LUAXSTAT == "Complete" ~ "Yes",
+    LUXCAPM < 311 & LUAXSTAT == "Complete" ~ "No"
+  ))
+
+tabyl(nhanes_2017_2020$Liver_fat)
+
+```
+
+### Liver Inflammation
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(Liver_inflammation = case_when(
+    (ALT_elevated == "Yes" & !is.na(AST_elevated)) | 
+    (AST_elevated == "Yes" & !is.na(ALT_elevated)) ~ "Yes",
+    ALT_elevated == "No" & AST_elevated == "No" ~ "No"
+  ))
+
+tabyl(nhanes_2017_2020$Liver_inflammation)
+
+```
+
+### Complete case
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(complete_case = case_when(
+    !is.na(age1) & 
+    !is.na(sex) & 
+    !is.na(education) & 
+    !is.na(poverty) &
+    !is.na(bmi2) &
+    !is.na(access_healthcare) &
+    !is.na(diabetes) & 
+    !is.na(aware_liver_disease) &
+    !is.na(viral) & 
+    !is.na(alcohol_variable) & 
+    !is.na(ALT_elevated) & 
+    !is.na(AST_elevated) & 
+    !is.na(Liver_fat) & 
+    !is.na(Liver_inflammation) &
+    !is.na(Liver_fibrosis) & 
+    (RIDAGEYR >= 20 & RIDSTATR == "Both interviewed and MEC examine") ~ 1
+  ))
+
+tabyl(nhanes_2017_2020$complete_case)
+
+```
+
+```{r}
+#ALQ111
+nhanes_2017_2020 %>% 
+tabyl(ALQ111, complete_case)
+```
+```{r}
+#ALQ121
+nhanes_2017_2020 %>% 
+  filter(ALQ111=="Yes" & ALQ121=="Never in the last year") %>% 
+  tabyl(ALQ121, complete_case)
+```
+```{r}
+nhanes_2017_2020 %>% 
+  #filter(ALQ111=="Yes" & ALQ121=="Never in the last year") %>% 
+  tabyl(alcohol_variable, complete_case)
+```
+
+```{r}
+nhanes_2017_2020 %>% 
+tabyl(ALQ111, alcohol_variable)
+```
+
+```{r}
+nhanes_2017_2020 <- nhanes_2017_2020 %>%
+  mutate(final_sample = case_when(
+    !is.na(age1) & 
+    !is.na(sex) & 
+    !is.na(education) & 
+    !is.na(poverty) &
+    !is.na(bmi2) &
+    !is.na(access_healthcare) &
+    !is.na(diabetes) & 
+    !is.na(aware_liver_disease) &
+    !is.na(viral) & 
+    !is.na(alcohol_variable) & 
+    !is.na(ALT_elevated) & 
+    !is.na(AST_elevated) & 
+    #!is.na(Liver_fat) & 
+    #!is.na(Liver_inflammation) &
+    !is.na(Liver_fibrosis) & 
+    (RIDAGEYR >= 20 & RIDSTATR == "Both interviewed and MEC examine") ~ 1
+  ))
+
+tabyl(nhanes_2017_2020$final_sample)
+
+```
+
+## Final Dataset
+
+```{r}
+nhanes_2017_2020 %>% 
+  saveRDS("proccessed_data/data_nhanes_processsed.rds")
+```
+
