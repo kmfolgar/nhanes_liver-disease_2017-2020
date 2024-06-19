@@ -235,6 +235,7 @@ summary(nhanes_2017_2020$bmi)
 ```
 
 ```{r}
+
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(bmi2 = case_when(BMXBMI<18.5              ~ "Underweight",
                        BMXBMI>=18.5 & BMXBMI<25 ~ "Normal",
@@ -259,13 +260,11 @@ summary(nhanes_2017_2020$waist_to_hip)
 
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>% 
-  mutate(waist_to_hip_cat=case_when(waist_to_hip_valid==1 & waist_to_hip>=1 ~ "More than 1",
+  mutate(waist_to_hip_cat=case_when(waist_to_hip_valid==1 & waist_to_hip>1 ~ "More than 1",
                                     waist_to_hip_valid==1 & waist_to_hip<=1 ~ "Less than 1")) 
 
 tabyl(nhanes_2017_2020$waist_to_hip_cat)
 ```
-
-
 
 ### Health Insurance
 
@@ -612,7 +611,8 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     !is.na(sex) & 
     !is.na(education) & 
     !is.na(poverty) &
-    !is.na(bmi2) &
+    #!is.na(bmi2) &
+    !is.na(waist_to_hip_cat) &
     !is.na(access_healthcare) &
     !is.na(diabetes) & 
     !is.na(aware_liver_disease) &
@@ -659,7 +659,8 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     !is.na(sex) & 
     !is.na(education) & 
     !is.na(poverty) &
-    !is.na(bmi2) &
+    #!is.na(bmi2) &
+    !is.na(waist_to_hip_cat) &
     !is.na(access_healthcare) &
     !is.na(diabetes) & 
     !is.na(aware_liver_disease) &
@@ -676,6 +677,8 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 tabyl(nhanes_2017_2020$final_sample)
 
 ```
+
+
 
 ## Final Dataset
 

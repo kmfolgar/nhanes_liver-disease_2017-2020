@@ -38,6 +38,9 @@ data_nhanes_1 <- readRDS("proccessed_data/data_nhanes_processsed.rds")  %>%
                                   "Normal",
                                  "Overweight", 
                                  "Obesity"),
+           waist_to_hip_cat = fct_relevel(waist_to_hip_cat, 
+                                          "Less than 1", 
+                                          "More than 1"), 
            education=fct_relevel(education,
                                  "Completed High school or above",
                                  "Less than high school"))
@@ -136,6 +139,8 @@ byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Underweight") %>% pr
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Normal") %>% preproceso_tabla1("Normal"))
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Overweight") %>% preproceso_tabla1("Overweight"))
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Obesity") %>% preproceso_tabla1("Obesity"))
+byrace <- left_join(byrace, age_prevalences_nhanes("waist_to_hip_cat", "More than 1") %>% preproceso_tabla1("More than 1"))
+byrace <- left_join(byrace, age_prevalences_nhanes("waist_to_hip_cat", "Less than 1") %>% preproceso_tabla1("Less than 1"))
 byrace <- left_join(byrace, age_prevalences_nhanes("diabetes", "Yes") %>% preproceso_tabla1("Diabetes"))
 byrace <- left_join(byrace, age_prevalences_nhanes("aware_liver_disease", "Yes") %>% preproceso_tabla1("Aware of liver disease"))
 byrace <- left_join(byrace, age_prevalences_nhanes("alcohol_variable", "Lifetime abstainers") %>% preproceso_tabla1("Lifetime abstainers"))
@@ -203,6 +208,14 @@ overall <- overall %>%
   
   left_join(age_prevalences_nhanes("bmi2", "Obesity", group = "overall") %>% 
               preproceso_tabla1("Obesity") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("waist_to_hip_cat", "More than 1", group = "overall") %>% 
+              preproceso_tabla1("More than 1") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("waist_to_hip_cat", "Less than 1", group = "overall") %>% 
+              preproceso_tabla1("Less than 1") %>% 
                 select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
   
   left_join(age_prevalences_nhanes("diabetes", "Yes", group = "overall") %>% 
@@ -406,7 +419,7 @@ summary(nhanes_2017_2020$waist_to_hip)
 
 ```{r}
 nhanes_2017_2020 %>% 
-  ggplot(aes(x=waist_to_hip, y=bmi, color=bmi2)) +
+  ggplot(aes(y=waist_to_hip, x=bmi, color=bmi2)) +
   geom_point() +
   facet_wrap(~sex)
 ```
