@@ -38,8 +38,9 @@ data_nhanes_1 <- readRDS("proccessed_data/data_nhanes_processsed.rds")  %>%
                                   "Normal",
                                  "Overweight", 
                                  "Obesity"),
-           waist_to_hip_cat= fct_relevel(waist_to_hip_cat, "Less than 1",
-                                  "More than 1"),
+           waist_to_hip_cat = fct_relevel(waist_to_hip_cat, 
+                                          "Less than 1", 
+                                          "More than 1"), 
            education=fct_relevel(education,
                                  "Completed High school or above",
                                  "Less than high school"), 
@@ -59,7 +60,7 @@ data_nhanes_1$poverty <- relevel(as.factor(data_nhanes_1$poverty), ref="No")
 data_nhanes_1$access_healthcare <- relevel(as.factor(data_nhanes_1$access_healthcare), ref="Yes")
 data_nhanes_1$education <- relevel(as.factor(data_nhanes_1$education),ref ="Completed High school or above")
 #data_nhanes_1$education3 <- relevel(as.factor(data_nhanes_1$education3),ref ="Some college or above")
-data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
+#data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
 data_nhanes_1$waist_to_hip_cat <- relevel(as.factor(data_nhanes_1$waist_to_hip_cat), ref="Less than 1")
 data_nhanes_1$diabetes <- relevel(as.factor(data_nhanes_1$diabetes),ref ="No")
 data_nhanes_1$HepB_Status <- relevel(as.factor(data_nhanes_1$HepB_Status),ref ="No Hepatitis B")
@@ -94,7 +95,7 @@ age_prevalences_nhanes <- function(k, y, group=race){
   svystandardize(., by = ~age1, over = ~race,
                  # using NCHS standard population for ages 20-39, 40-59, 60+ https://www.cdc.gov/nchs/tutorials/NHANES/NHANESAnalyses/AgeStandardization/Task1b_SAS92.html
                  population = c(77670, 72816, 45364), 
-                 excluding.missing=~complete_case) %>% 
+                 excluding.missing=~complete_case2) %>% 
     #filter(complete_case==1) %>% 
     group_by({{group}}) %>% 
     summarize(estimate = survey_mean(!!k == y, na.rm = TRUE, vartype = "ci", proportion = TRUE)) %>% 
@@ -138,13 +139,12 @@ byrace <- left_join(byrace, age_prevalences_nhanes("education", "Completed High 
 byrace <- left_join(byrace, age_prevalences_nhanes("education", "Less than high school") %>% preproceso_tabla1("Less than high school"))
 byrace <- left_join(byrace, age_prevalences_nhanes("poverty", "Yes") %>% preproceso_tabla1("Poverty"))
 byrace <- left_join(byrace, age_prevalences_nhanes("access_healthcare", "No") %>% preproceso_tabla1("Lack of regular access to healthcare"))
-byrace <- left_join(byrace, age_prevalences_nhanes("waist_to_hip_cat", "More than 1") %>% preproceso_tabla1("More than 1"))
-byrace <- left_join(byrace, age_prevalences_nhanes("waist_to_hip_cat", "Less than 1") %>% preproceso_tabla1("Less than 1"))
-byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Underweight") %>% preproceso_tabla1("Underweight"))
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Underweight") %>% preproceso_tabla1("Underweight"))
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Normal") %>% preproceso_tabla1("Normal"))
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Overweight") %>% preproceso_tabla1("Overweight"))
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Obesity") %>% preproceso_tabla1("Obesity"))
+byrace <- left_join(byrace, age_prevalences_nhanes("waist_to_hip_cat", "More than 1") %>% preproceso_tabla1("More than 1"))
+byrace <- left_join(byrace, age_prevalences_nhanes("waist_to_hip_cat", "Less than 1") %>% preproceso_tabla1("Less than 1"))
 byrace <- left_join(byrace, age_prevalences_nhanes("diabetes", "Yes") %>% preproceso_tabla1("Diabetes"))
 byrace <- left_join(byrace, age_prevalences_nhanes("aware_liver_disease", "Yes") %>% preproceso_tabla1("Aware of liver disease"))
 byrace <- left_join(byrace, age_prevalences_nhanes("alcohol_variable", "Lifetime abstainers") %>% preproceso_tabla1("Lifetime abstainers"))
@@ -198,14 +198,6 @@ overall <- overall %>%
               preproceso_tabla1("Lack of regular access to healthcare") %>% 
                 select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
   
-  left_join(age_prevalences_nhanes("waist_to_hip_cat", "More than 1", group = "overall") %>% 
-              preproceso_tabla1("More than 1") %>% 
-                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
-  
-  left_join(age_prevalences_nhanes("waist_to_hip_cat", "Less than 1", group = "overall") %>% 
-              preproceso_tabla1("Less than 1") %>% 
-                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
-  
   left_join(age_prevalences_nhanes("bmi2", "Underweight", group = "overall") %>% 
               preproceso_tabla1("Underweight") %>% 
                 select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
@@ -220,6 +212,14 @@ overall <- overall %>%
   
   left_join(age_prevalences_nhanes("bmi2", "Obesity", group = "overall") %>% 
               preproceso_tabla1("Obesity") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("waist_to_hip_cat", "More than 1", group = "overall") %>% 
+              preproceso_tabla1("More than 1") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("waist_to_hip_cat", "Less than 1", group = "overall") %>% 
+              preproceso_tabla1("Less than 1") %>% 
                 select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
   
   left_join(age_prevalences_nhanes("diabetes", "Yes", group = "overall") %>% 
@@ -424,7 +424,7 @@ summary(nhanes_2017_2020$waist_to_hip)
 
 ```{r}
 nhanes_2017_2020 %>% 
-  ggplot(aes(x=waist_to_hip, y=bmi, color=bmi2)) +
+  ggplot(aes(y=waist_to_hip, x=bmi, color=bmi2)) +
   geom_point() +
   facet_wrap(~sex)
 ```
@@ -452,3 +452,5 @@ preproceso_tabla1('More than 1')
 age_prevalences_nhanes('waist_to_hip_cat', "More than 1", group = "overall") %>% 
 preproceso_tabla1('More than 1')
 ```
+```
+
