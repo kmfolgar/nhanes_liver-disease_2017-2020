@@ -187,6 +187,10 @@ table3 %>%
 table3 %>% 
   select(Hispanic, `Non-Hispanic Asian`, `Non-Hispanic Black`, `Other Race`) %>% 
   write.csv("plots_tables/table2.csv")
+
+table3 %>% 
+  select(Hispanic, `Non-Hispanic Asian`, `Non-Hispanic Black`, `Other Race`)
+
 ```
 
 
@@ -256,6 +260,8 @@ table4 %>% knitr::kable()
 ```
 
 
+## Supplemental Table 1 
+
 ```{r}
 lista_modelos1 %>% 
   reduce(bind_rows) %>% 
@@ -268,10 +274,6 @@ lista_modelos1 %>%
 table3_appendix %>% write.csv("plots_tables/table3_appendix_race_adjusted.csv")
 table3_appendix %>% knitr::kable()
 ```
-
-
-BMI models -- Appendix 
-## Table 2 Appendix: 
 ```{r}
 reggres <- function(x, data = nhanesDesign, design = Clean_Design) {
   y <- as.formula(x)
@@ -315,71 +317,66 @@ prepo <- function(x){
 
   }
 
+```
+
+
+## Supplemental Table 2: Sensitivity BMI - Waist to Hip 
+
+```{r}
 ## Liver Fat 
-model_1a <- reggres("Liver_fat  ~ race + sex + age1")
-
-model_1b <- reggres("Liver_fat  ~ race + sex + age1 + 
-                                           education + access_healthcare + poverty")
-
-model_1c <- reggres("Liver_fat  ~ race + sex + age1 + 
+model_1a <- reggres("Liver_fat  ~ race + sex + age1 + 
                                            education + access_healthcare + poverty + 
                                            viral + bmi2 + diabetes + alcohol_variable")
+model_1b <- reggres("Liver_fat  ~ race + sex + age1 + 
+                                           education + access_healthcare + poverty + 
+                                           viral + waist_to_hip_cat + diabetes + alcohol_variable")
+
 
 ## Liver Inflammation
-model_2a <- reggres("Liver_inflammation  ~ race + sex + age1")
+model_2a <- reggres("Liver_inflammation  ~ race + sex + age1 + 
+                                  education + access_healthcare + poverty + 
+                                  viral + bmi2 + diabetes + alcohol_variable")
 
 model_2b <- reggres("Liver_inflammation  ~ race + sex + age1 + 
-                                  education + access_healthcare  + poverty")
-
-model_2c <- reggres("Liver_inflammation  ~ race + sex + age1 + 
                                   education + access_healthcare + poverty + 
                                   viral + bmi2 + diabetes + alcohol_variable")
 
 ## Liver Fibrosis
-model_3a <- reggres("Liver_fibrosis  ~ race + sex + age1")
+model_3a <- reggres("Liver_fibrosis  ~ race + sex + age1 + 
+                                       education + access_healthcare + poverty + 
+                                       viral + bmi2 + diabetes + alcohol_variable")
 
 model_3b <- reggres("Liver_fibrosis  ~ race + sex + age1 + 
-                                       education + access_healthcare + poverty")
-
-model_3c <- reggres("Liver_fibrosis  ~ race + sex + age1 + 
                                        education + access_healthcare + poverty + 
                                        viral + bmi2 + diabetes + alcohol_variable")
 
 prepo(model_1a) %>% rename("model_1a"="y") -> model_1a_table
 prepo(model_1b) %>% rename("model_1b"="y") -> model_1b_table
-prepo(model_1c) %>% rename("model_1c"="y") -> model_1c_table
 prepo(model_2a) %>% rename("model_2a"="y") -> model_2a_table
 prepo(model_2b) %>% rename("model_2b"="y") -> model_2b_table
-prepo(model_2c) %>% rename("model_2c"="y") -> model_2c_table
 prepo(model_3a) %>% rename("model_3a"="y") -> model_3a_table
 prepo(model_3b) %>% rename("model_3b"="y") -> model_3b_table
-prepo(model_3c) %>% rename("model_3c"="y") -> model_3c_table
 
-#list(model_1a_table, model_1b_table, model_1c_table,
-#     model_2a_table, model_2b_table, model_2c_table,
-#     model_3a_table, model_3b_table, model_3c_table) %>% 
-#  reduce(merge, by="race")  %>% 
-#  knitr::kable()
-
-
-list(model_1a_table, model_1b_table, model_1c_table,
-     model_2a_table, model_2b_table, model_2c_table,
-     model_3a_table, model_3b_table, model_3c_table) %>% 
+list(model_1a_table, model_1b_table,
+     model_2a_table, model_2b_table,
+     model_3a_table, model_3b_table) %>% 
   reduce(merge, by="race") %>% t() %>% 
   as.data.frame() %>% 
-  row_to_names(1)  -> table3
+  row_to_names(1)  -> table2_appendix
 
-saveRDS(table3, file = "proccessed_data/table3_appendix.rds")
+#saveRDS(table3, file = "proccessed_data/table3_appendix.rds")
 
-table3 %>% 
+table2_appendix %>% 
+  select(Hispanic, `Non-Hispanic Asian`, `Non-Hispanic Black`, `Other Race`) %>% 
+  write.csv("plots_tables/table2_appendix.csv")
+
+table2_appendix %>% 
   select(Hispanic, `Non-Hispanic Asian`, `Non-Hispanic Black`, `Other Race`) %>% 
   knitr::kable()
 ```
 
 ```{r}
-table3 %>% 
-  select(Hispanic, `Non-Hispanic Asian`, `Non-Hispanic Black`, `Other Race`) %>% 
-  write.csv("plots_tables/table2_appendix.csv")
+
 ```
 
 Waist to Hip Ratio models -- Appendix 

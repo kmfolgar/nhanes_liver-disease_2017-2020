@@ -685,3 +685,108 @@ nhanes_2017_2020 %>%
   saveRDS("proccessed_data/data_nhanes_processsed.rds")
 ```
 
+
+## Flowchart
+
+```{r}
+nhanes_2017_2020 %>% dim()
+```
+```{r}
+nhanes_2017_2020 %>% filter(!is.na(age1) & !is.na(sex) & RIDAGEYR >= 20 & RIDSTATR=="Both interviewed and MEC examined") %>% dim()
+```
+
+```{r}
+nhanes_2017_2020 %>% filter(!is.na(age1) & !is.na(sex) & RIDAGEYR >= 20 & RIDSTATR=="Both interviewed and MEC examined" & !is.na(education) & !is.na(poverty)) %>% dim()
+```
+
+
+
+```{r}
+nhanes_2017_2020 %>% filter(!is.na(age1) & 
+                              !is.na(sex) & 
+                              RIDAGEYR >= 20 & 
+                              RIDSTATR=="Both interviewed and MEC examined" &
+                              !is.na(education) & 
+                              !is.na(poverty) &
+                              !is.na(waist_to_hip_cat) &
+                              !is.na(access_healthcare) &
+                              !is.na(diabetes) & 
+                              !is.na(aware_liver_disease) &
+                              !is.na(viral) & 
+                              !is.na(alcohol_variable)) %>% 
+  dim()
+
+```
+
+```{r}
+nhanes_2017_2020 %>% filter(!is.na(age1) & 
+                              !is.na(sex) & 
+                              RIDAGEYR >= 20 & 
+                              RIDSTATR=="Both interviewed and MEC examined" &
+                              !is.na(education) & 
+                              !is.na(poverty) &
+                              !is.na(waist_to_hip_cat) &
+                              !is.na(access_healthcare) &
+                              !is.na(diabetes) & 
+                              !is.na(aware_liver_disease) &
+                              !is.na(viral) & 
+                              !is.na(alcohol_variable)   &
+                              !is.na(Liver_fat)) %>% 
+  dim()
+```
+
+
+```{r}
+nhanes_2017_2020 %>% filter(!is.na(age1) & 
+                              !is.na(sex) & 
+                              RIDAGEYR >= 20 & 
+                              RIDSTATR=="Both interviewed and MEC examined" &
+                              !is.na(education) & 
+                              !is.na(poverty) &
+                              !is.na(waist_to_hip_cat) &
+                              !is.na(access_healthcare) &
+                              !is.na(diabetes) & 
+                              !is.na(aware_liver_disease) &
+                              !is.na(viral) & 
+                              !is.na(alcohol_variable)   &
+                              !is.na(Liver_inflammation)) %>% 
+  dim()
+```
+
+```{r}
+nhanes_2017_2020 %>% filter(!is.na(age1) & 
+                              !is.na(sex) & 
+                              RIDAGEYR >= 20 & 
+                              RIDSTATR=="Both interviewed and MEC examined" &
+                              !is.na(education) & 
+                              !is.na(poverty) &
+                              !is.na(waist_to_hip_cat) &
+                              !is.na(access_healthcare) &
+                              !is.na(diabetes) & 
+                              !is.na(aware_liver_disease) &
+                              !is.na(viral) & 
+                              !is.na(alcohol_variable)   &
+                              !is.na(Liver_fibrosis)) %>% 
+  dim()
+```
+
+
+```{r}
+nhanes_2017_2020 %>% filter(!is.na(age1) & 
+                              !is.na(sex) & 
+                              RIDAGEYR >= 20 & 
+                              RIDSTATR=="Both interviewed and MEC examined" &
+                              !is.na(education) & 
+                              !is.na(poverty) &
+                              !is.na(waist_to_hip_cat) &
+                              !is.na(access_healthcare) &
+                              !is.na(diabetes) & 
+                              !is.na(aware_liver_disease) &
+                              !is.na(viral) & 
+                              !is.na(alcohol_variable)   &
+                              !is.na(Liver_fat) & 
+                              !is.na(Liver_inflammation) &
+                              !is.na(Liver_fibrosis)) %>% 
+  dim()
+```
+
