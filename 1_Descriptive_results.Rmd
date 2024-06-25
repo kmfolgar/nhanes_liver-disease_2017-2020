@@ -40,15 +40,16 @@ data_nhanes_1 <- readRDS("proccessed_data/data_nhanes_processsed.rds")  %>%
                                  "Obesity"),
            education=fct_relevel(education,
                                  "Completed High school or above",
-                                 "Less than high school"))
+                                 "Less than high school"), 
+           age1=fct_relevel(age1, 
+                            "20-39",
+                            "40-59",
+                            "60+")) 
 ```
-
-
-
 
 ```{r}
 ## Reference groups
-# Race - Non-Hispanic White, BMI Normal, Education More than high school, No diabetes, No Hepatitis, 
+# Race - Non-Hispanic White, Less than 1 Waist to Hip, Education More than high school, No diabetes, No Hepatitis, 
 data_nhanes_1$race <- relevel(as.factor(data_nhanes_1$race),ref ="Non-Hispanic White")
 data_nhanes_1$sex <- relevel(as.factor(data_nhanes_1$sex),ref ="Male")
 data_nhanes_1$age1 <- relevel(as.factor(data_nhanes_1$age1),ref ="20-39")
@@ -56,7 +57,8 @@ data_nhanes_1$poverty <- relevel(as.factor(data_nhanes_1$poverty), ref="No")
 data_nhanes_1$access_healthcare <- relevel(as.factor(data_nhanes_1$access_healthcare), ref="Yes")
 data_nhanes_1$education <- relevel(as.factor(data_nhanes_1$education),ref ="Completed High school or above")
 #data_nhanes_1$education3 <- relevel(as.factor(data_nhanes_1$education3),ref ="Some college or above")
-data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
+#data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
+data_nhanes_1$waist_to_hip_cat <- relevel(as.factor(data_nhanes_1$waist_to_hip_cat), ref="Less than 1")
 data_nhanes_1$diabetes <- relevel(as.factor(data_nhanes_1$diabetes),ref ="No")
 data_nhanes_1$HepB_Status <- relevel(as.factor(data_nhanes_1$HepB_Status),ref ="No Hepatitis B")
 data_nhanes_1$HepC <- relevel(as.factor(data_nhanes_1$HepC),ref ="No Hepatitis C")
@@ -70,7 +72,6 @@ data_nhanes_1$alcohol_variable  <- relevel(as.factor(data_nhanes_1$alcohol_varia
 nhanesDesign <- svydesign(id      = ~SDMVPSU,
                           strata  = ~SDMVSTRA,  
                           weights = ~WTMECPRP,
-                          
                           nest    = TRUE,
                           data    = data_nhanes_1)
 
@@ -80,18 +81,18 @@ Clean_Design <- subset(nhanesDesign, complete_case==1)
 
 # Table 1
 
-
 ```{r}
 # Function to calculate age-adjusted prevalences
 age_prevalences_nhanes <- function(k, y, group=race){
   k <- rlang::sym(k)
   data_nhanes_1 %>% 
+  filter(!is.na(age1)) %>%  # Filter out rows where age1 is NA
   as_survey_design(ids = SDMVPSU, strata = SDMVSTRA, 
                            weights = WTMECPRP, nest = TRUE) %>% 
-  svystandardize(., by = ~ age1, over = ~race,
+  svystandardize(., by = ~age1, over = ~race,
                  # using NCHS standard population for ages 20-39, 40-59, 60+ https://www.cdc.gov/nchs/tutorials/NHANES/NHANESAnalyses/AgeStandardization/Task1b_SAS92.html
-                 population = c(77670, 72816, 45364),
-                 excluding.missing = ~ complete_case) %>% 
+                 population = c(77670, 72816, 45364), 
+                 excluding.missing=~complete_case2) %>% 
     #filter(complete_case==1) %>% 
     group_by({{group}}) %>% 
     summarize(estimate = survey_mean(!!k == y, na.rm = TRUE, vartype = "ci", proportion = TRUE)) %>% 
@@ -102,7 +103,10 @@ preproceso_tabla1 <- function(x, y){
   x$estimate <- paste0(x$estimate, " (", x$estimate_low,", ",x$estimate_upp,")")
   x %>% rename({{ y }} :=estimate) %>% dplyr::select(-estimate_low, -estimate_upp)
 }
+
 ```
+
+
 
 ```{r}
 age_prevalences_nhanes('Liver_inflammation', 1)
@@ -268,6 +272,7 @@ data_nhanes_1 %>%
   filter(complete_case==1) %>% 
   tabyl(race) %>% 
   adorn_totals() %>% 
+  mutate(race=as.character(race)) %>% 
   mutate(race=ifelse(race=="Total", "overall", race)) %>% 
   select(-percent) -> N
 

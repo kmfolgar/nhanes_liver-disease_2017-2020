@@ -175,10 +175,11 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     RIDRETH3 == "Other Hispanic" ~ "Hispanic",
     RIDRETH3 == "Non-Hispanic Black" ~ "Non-Hispanic Black",
     RIDRETH3 == "Non-Hispanic Asian" ~ "Non-Hispanic Asian",
-    RIDRETH3 == "Other Race - Including Multi-Rac" ~ "Other Race"
+    RIDRETH3 == "Other Race - Including Multi-Racial" ~ "Other Race"
   ))
 
-tabyl(nhanes_2017_2020$race)
+nhanes_2017_2020 %>% 
+tabyl(RIDRETH3, race)
 ```
 
 ### Education (3 Categories)
@@ -620,11 +621,12 @@ tabyl(nhanes_2017_2020$Liver_inflammation)
 
 ```
 
-### Complete case (Waist to Hip)
+### Complete case (Waist_to_Hip)
 
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(complete_case = case_when(
+    !is.na(race) &
     !is.na(age1) &
     !is.na(sex) & 
     !is.na(education) & 
@@ -648,7 +650,7 @@ tabyl(nhanes_2017_2020$complete_case)
 
 ```
 
-### Complete case (BMI)
+### Complete case (Waist to hip)
 
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
