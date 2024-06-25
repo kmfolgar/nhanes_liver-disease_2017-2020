@@ -124,7 +124,8 @@ demo_p %>%
   left_join(huq_p, by="SEQN") %>% 
   left_join(hiq_p, by="SEQN") %>% 
   left_join(mcq_p, by="SEQN") %>% 
-  left_join(lux_p, by="SEQN") -> nhanes
+  left_join(lux_p, by="SEQN") %>% 
+  mutate_if(is.factor, as.character) -> nhanes
 
 rm(list = ls()[grepl("_", ls())])
 ```
@@ -174,10 +175,11 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     RIDRETH3 == "Other Hispanic" ~ "Hispanic",
     RIDRETH3 == "Non-Hispanic Black" ~ "Non-Hispanic Black",
     RIDRETH3 == "Non-Hispanic Asian" ~ "Non-Hispanic Asian",
-    RIDRETH3 == "Other Race - Including Multi-Rac" ~ "Other Race"
+    RIDRETH3 == "Other Race - Including Multi-Racial" ~ "Other Race"
   ))
 
-tabyl(nhanes_2017_2020$race)
+nhanes_2017_2020 %>% 
+tabyl(RIDRETH3, race)
 ```
 
 ### Education (3 Categories)
@@ -186,14 +188,15 @@ tabyl(nhanes_2017_2020$race)
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(education3 = case_when(
     DMDEDUC2 == "Less than 9th grade" ~ "Less than high school",
-    DMDEDUC2 == "9-11th grade (Includes 12th grad" ~ "Less than high school",
-    DMDEDUC2 == "High school graduate/GED or equi" ~ "Completed High school",
+    DMDEDUC2 == "9-11th grade (Includes 12th grade with no diploma)" ~ "Less than high school",
+    DMDEDUC2 == "High school graduate/GED or equivalent" ~ "Completed High school",
     DMDEDUC2 == "Some college or AA degree" ~ "Some college or above",
     DMDEDUC2 == "College graduate or above" ~ "Some college or above",
     DMDEDUC2 == "Don't Know" | DMDEDUC2 == "Refuse" ~ NA_character_
   ))
 
-tabyl(nhanes_2017_2020$education3)
+nhanes_2017_2020 %>% 
+tabyl(DMDEDUC2, education3)
 ```
 
 ### Education
@@ -202,14 +205,16 @@ tabyl(nhanes_2017_2020$education3)
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(education = case_when(
     DMDEDUC2 == "Less than 9th grade" ~ "Less than high school",
-    DMDEDUC2 == "9-11th grade (Includes 12th grad" ~ "Less than high school",
-    DMDEDUC2 == "High school graduate/GED or equi" ~ "Completed High school or above",
+    DMDEDUC2 == "9-11th grade (Includes 12th grade with no diploma)" ~ "Less than high school",
+    DMDEDUC2 == "High school graduate/GED or equivalent" ~ "Completed High school or above",
     DMDEDUC2 == "Some college or AA degree" ~ "Completed High school or above",
     DMDEDUC2 == "College graduate or above" ~ "Completed High school or above",
     DMDEDUC2 == "Don't Know" | DMDEDUC2 == "Refuse" ~ NA_character_
   ))
 
-tabyl(nhanes_2017_2020$education)
+nhanes_2017_2020 %>% 
+  tabyl(DMDEDUC2, education)
+
 ```
 
 ### Poverty 
@@ -235,7 +240,6 @@ summary(nhanes_2017_2020$bmi)
 ```
 
 ```{r}
-
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(bmi2 = case_when(BMXBMI<18.5              ~ "Underweight",
                        BMXBMI>=18.5 & BMXBMI<25 ~ "Normal",
@@ -260,11 +264,13 @@ summary(nhanes_2017_2020$waist_to_hip)
 
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>% 
-  mutate(waist_to_hip_cat=case_when(waist_to_hip_valid==1 & waist_to_hip>1 ~ "More than 1",
+  mutate(waist_to_hip_cat=case_when(waist_to_hip_valid==1 & waist_to_hip>=1 ~ "More than 1",
                                     waist_to_hip_valid==1 & waist_to_hip<=1 ~ "Less than 1")) 
 
 tabyl(nhanes_2017_2020$waist_to_hip_cat)
 ```
+
+
 
 ### Health Insurance
 
@@ -286,8 +292,9 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     HUQ030 == "There is more than one place" | HUQ030 == "Yes" ~ "Yes"
   ))
 
-tabyl(nhanes_2017_2020$regular_healthcare)
 
+nhanes_2017_2020 %>% 
+  tabyl(HUQ030, regular_healthcare)
 ```
 
 ### Access to Healthcare
@@ -297,8 +304,12 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(access_healthcare = case_when(health_insurance == "Yes" & regular_healthcare == "Yes" ~ "Yes", 
                                        health_insurance=="No" | regular_healthcare=="No" ~ "No"))
 
-tabyl(nhanes_2017_2020$access_healthcare)
+nhanes_2017_2020 %>% 
+  tabyl(access_healthcare, health_insurance)
 
+
+nhanes_2017_2020 %>% 
+  tabyl(access_healthcare, regular_healthcare)
 ```
 
 
@@ -311,7 +322,9 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     DIQ010 == "No" ~ "No",
     DIQ010 == "Borderline" ~ "No"))
 
-tabyl(nhanes_2017_2020$Diabetes_Doctor)
+
+nhanes_2017_2020 %>% 
+  tabyl(DIQ010, Diabetes_Doctor)
 
 ```
 
@@ -323,8 +336,13 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     DIQ050 == "Yes" | DIQ070 == "Yes" ~ "Yes",
     DIQ050 == "No" & DIQ070 == "No" ~ "No"))
 
-tabyl(nhanes_2017_2020$Diabetes_Meds)
+nhanes_2017_2020 %>% 
+  filter(DIQ070=="Yes") %>% 
+  tabyl(DIQ050, Diabetes_Meds)
 
+nhanes_2017_2020 %>% 
+  filter(DIQ070=="No") %>% 
+  tabyl(DIQ050, Diabetes_Meds)
 ```
 
 
@@ -381,7 +399,6 @@ HepB_Status = case_when(HepB_Status2=="No Hepatitis B" ~ "No Hepatitis B",
 
 tabyl(nhanes_2017_2020$HepB_Status2)
 tabyl(nhanes_2017_2020$HepB_Status)
-
 ```
 
 ### Hepatitis C
@@ -394,7 +411,8 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     LBDHCI == "Positive HCV RNA" ~ "Current Infection"
   ))
 
-tabyl(nhanes_2017_2020$HepC)
+nhanes_2017_2020 %>% 
+  tabyl(LBDHCI, HepC)
 
 ```
 
@@ -433,7 +451,8 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     ALQ121 == "1 to 2 times in the last year" ~ 0.052
   ))
 
-tabyl(nhanes_2017_2020$alcohol_factor)
+nhanes_2017_2020 %>% 
+  tabyl(ALQ121, alcohol_factor)
 ```
 
 
@@ -527,7 +546,7 @@ tabyl(nhanes_2017_2020$alcohol_variable)
 
 ```{r}
 nhanes_2017_2020 %>% 
-tabyl(moderate_drinkers,alcohol_variable)
+  tabyl(moderate_drinkers,alcohol_variable)
 ```
 
 
@@ -602,12 +621,13 @@ tabyl(nhanes_2017_2020$Liver_inflammation)
 
 ```
 
-### Complete case
+### Complete case (Waist_to_Hip)
 
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(complete_case = case_when(
-    !is.na(age1) & 
+    !is.na(race) &
+    !is.na(age1) &
     !is.na(sex) & 
     !is.na(education) & 
     !is.na(poverty) &
@@ -623,44 +643,24 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     !is.na(Liver_fat) & 
     !is.na(Liver_inflammation) &
     !is.na(Liver_fibrosis) & 
-    (RIDAGEYR >= 20 & RIDSTATR == "Both interviewed and MEC examine") ~ 1
+    (RIDAGEYR >= 20 & RIDSTATR=="Both interviewed and MEC examined") ~ 1
   ))
 
 tabyl(nhanes_2017_2020$complete_case)
 
 ```
 
-```{r}
-#ALQ111
-nhanes_2017_2020 %>% 
-tabyl(ALQ111, complete_case)
-```
-```{r}
-#ALQ121
-nhanes_2017_2020 %>% 
-  filter(ALQ111=="Yes" & ALQ121=="Never in the last year") %>% 
-  tabyl(ALQ121, complete_case)
-```
-```{r}
-nhanes_2017_2020 %>% 
-  #filter(ALQ111=="Yes" & ALQ121=="Never in the last year") %>% 
-  tabyl(alcohol_variable, complete_case)
-```
-
-```{r}
-nhanes_2017_2020 %>% 
-tabyl(ALQ111, alcohol_variable)
-```
+### Complete case (Waist to hip)
 
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
-  mutate(final_sample = case_when(
-    !is.na(age1) & 
+  mutate(complete_case2 = case_when(
+    !is.na(age1) &
     !is.na(sex) & 
     !is.na(education) & 
     !is.na(poverty) &
-    #!is.na(bmi2) &
-    !is.na(waist_to_hip_cat) &
+    !is.na(bmi2) &
+    #!is.na(waist_to_hip_cat) &
     !is.na(access_healthcare) &
     !is.na(diabetes) & 
     !is.na(aware_liver_disease) &
@@ -668,17 +668,15 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     !is.na(alcohol_variable) & 
     !is.na(ALT_elevated) & 
     !is.na(AST_elevated) & 
-    #!is.na(Liver_fat) & 
-    #!is.na(Liver_inflammation) &
+    !is.na(Liver_fat) & 
+    !is.na(Liver_inflammation) &
     !is.na(Liver_fibrosis) & 
-    (RIDAGEYR >= 20 & RIDSTATR == "Both interviewed and MEC examine") ~ 1
+    (RIDAGEYR >= 20 & RIDSTATR=="Both interviewed and MEC examined") ~ 1
   ))
 
-tabyl(nhanes_2017_2020$final_sample)
+tabyl(nhanes_2017_2020$complete_case2)
 
 ```
-
-
 
 ## Final Dataset
 

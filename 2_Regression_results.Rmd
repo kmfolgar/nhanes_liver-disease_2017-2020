@@ -37,13 +37,17 @@ data_nhanes_1 <- readRDS("proccessed_data/data_nhanes_processsed.rds")  %>%
                                  "Obesity"),
            education=fct_relevel(education,
                                  "Completed High school or above",
-                                 "Less than high school"))
+                                 "Less than high school"),
+           age1=fct_relevel(age1, 
+                            "20-39",
+                            "40-59",
+                            "60+"))
 ```
 
 
 ```{r}
 ## Reference groups
-# Race - Non-Hispanic White, BMI Normal, Education More than high school, No diabetes, No Hepatitis, 
+# Race - Non-Hispanic White, Less than 1 Waist to Hip, Education More than high school, No diabetes, No Hepatitis, 
 data_nhanes_1$race <- relevel(as.factor(data_nhanes_1$race),ref ="Non-Hispanic White")
 data_nhanes_1$sex <- relevel(as.factor(data_nhanes_1$sex),ref ="Male")
 data_nhanes_1$age1 <- relevel(as.factor(data_nhanes_1$age1),ref ="20-39")
@@ -51,7 +55,8 @@ data_nhanes_1$poverty <- relevel(as.factor(data_nhanes_1$poverty), ref="No")
 data_nhanes_1$access_healthcare <- relevel(as.factor(data_nhanes_1$access_healthcare), ref="Yes")
 data_nhanes_1$education <- relevel(as.factor(data_nhanes_1$education),ref ="Completed High school or above")
 #data_nhanes_1$education3 <- relevel(as.factor(data_nhanes_1$education3),ref ="Some college or above")
-data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
+#data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
+data_nhanes_1$waist_to_hip_cat <- relevel(as.factor(data_nhanes_1$waist_to_hip_cat), ref="Less than 1")
 data_nhanes_1$diabetes <- relevel(as.factor(data_nhanes_1$diabetes),ref ="No")
 data_nhanes_1$HepB_Status <- relevel(as.factor(data_nhanes_1$HepB_Status),ref ="No Hepatitis B")
 data_nhanes_1$HepC <- relevel(as.factor(data_nhanes_1$HepC),ref ="No Hepatitis C")
@@ -63,7 +68,6 @@ data_nhanes_1$alcohol_variable  <- relevel(as.factor(data_nhanes_1$alcohol_varia
 
 ```{r}
 ## Survey Design
-
 nhanesDesign <- svydesign(id      = ~SDMVPSU,
                           strata  = ~SDMVSTRA,  
                           weights = ~WTMECPRP,
@@ -126,7 +130,7 @@ model_1b <- reggres("Liver_fat  ~ race + sex + age1 +
 
 model_1c <- reggres("Liver_fat  ~ race + sex + age1 + 
                                            education + access_healthcare + poverty + 
-                                           viral + bmi2 + diabetes + alcohol_variable")
+                                           viral + waist_to_hip_cat + diabetes + alcohol_variable")
 
 ## Liver Inflammation
 model_2a <- reggres("Liver_inflammation  ~ race + sex + age1")
@@ -136,7 +140,7 @@ model_2b <- reggres("Liver_inflammation  ~ race + sex + age1 +
 
 model_2c <- reggres("Liver_inflammation  ~ race + sex + age1 + 
                                   education + access_healthcare + poverty + 
-                                  viral + bmi2 + diabetes + alcohol_variable")
+                                  viral + waist_to_hip_cat + diabetes + alcohol_variable")
 
 ## Liver Fibrosis
 model_3a <- reggres("Liver_fibrosis  ~ race + sex + age1")
@@ -146,7 +150,7 @@ model_3b <- reggres("Liver_fibrosis  ~ race + sex + age1 +
 
 model_3c <- reggres("Liver_fibrosis  ~ race + sex + age1 + 
                                        education + access_healthcare + poverty + 
-                                       viral + bmi2 + diabetes + alcohol_variable")
+                                       viral + waist_to_hip_cat + diabetes + alcohol_variable")
 
 prepo(model_1a) %>% rename("model_1a"="y") -> model_1a_table
 prepo(model_1b) %>% rename("model_1b"="y") -> model_1b_table
@@ -266,7 +270,7 @@ table3_appendix %>% knitr::kable()
 ```
 
 
-Waist to Hip Ratio models -- Appendix 
+BMI models -- Appendix 
 ## Table 2 Appendix: 
 ```{r}
 reggres <- function(x, data = nhanesDesign, design = Clean_Design) {
@@ -319,7 +323,7 @@ model_1b <- reggres("Liver_fat  ~ race + sex + age1 +
 
 model_1c <- reggres("Liver_fat  ~ race + sex + age1 + 
                                            education + access_healthcare + poverty + 
-                                           viral + waist_to_hip_cat + diabetes + alcohol_variable")
+                                           viral + bmi2 + diabetes + alcohol_variable")
 
 ## Liver Inflammation
 model_2a <- reggres("Liver_inflammation  ~ race + sex + age1")
@@ -329,7 +333,7 @@ model_2b <- reggres("Liver_inflammation  ~ race + sex + age1 +
 
 model_2c <- reggres("Liver_inflammation  ~ race + sex + age1 + 
                                   education + access_healthcare + poverty + 
-                                  viral + waist_to_hip_cat + diabetes + alcohol_variable")
+                                  viral + bmi2 + diabetes + alcohol_variable")
 
 ## Liver Fibrosis
 model_3a <- reggres("Liver_fibrosis  ~ race + sex + age1")
@@ -339,7 +343,7 @@ model_3b <- reggres("Liver_fibrosis  ~ race + sex + age1 +
 
 model_3c <- reggres("Liver_fibrosis  ~ race + sex + age1 + 
                                        education + access_healthcare + poverty + 
-                                       viral + waist_to_hip_cat + diabetes + alcohol_variable")
+                                       viral + bmi2 + diabetes + alcohol_variable")
 
 prepo(model_1a) %>% rename("model_1a"="y") -> model_1a_table
 prepo(model_1b) %>% rename("model_1b"="y") -> model_1b_table
@@ -448,8 +452,6 @@ lista_modelos1 %>%
 
 table4 %>% write.csv("plots_tables/table3_appendix.csv")
 table4 %>% knitr::kable()
-```
-
 ```
 
 
