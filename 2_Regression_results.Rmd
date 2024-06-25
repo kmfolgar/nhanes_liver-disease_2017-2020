@@ -55,7 +55,7 @@ data_nhanes_1$poverty <- relevel(as.factor(data_nhanes_1$poverty), ref="No")
 data_nhanes_1$access_healthcare <- relevel(as.factor(data_nhanes_1$access_healthcare), ref="Yes")
 data_nhanes_1$education <- relevel(as.factor(data_nhanes_1$education),ref ="Completed High school or above")
 #data_nhanes_1$education3 <- relevel(as.factor(data_nhanes_1$education3),ref ="Some college or above")
-#data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
+data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
 data_nhanes_1$waist_to_hip_cat <- relevel(as.factor(data_nhanes_1$waist_to_hip_cat), ref="Less than 1")
 data_nhanes_1$diabetes <- relevel(as.factor(data_nhanes_1$diabetes),ref ="No")
 data_nhanes_1$HepB_Status <- relevel(as.factor(data_nhanes_1$HepB_Status),ref ="No Hepatitis B")
@@ -194,7 +194,7 @@ table3 %>%
 
 ```{r}
 exposures <- c("education", "access_healthcare", "poverty",
-                      "viral", "bmi2", "diabetes", "alcohol_variable")
+                      "viral", "waist_to_hip_cat", "diabetes", "alcohol_variable")
 
 outcomes1 <- c("Liver_fat", "Liver_inflammation", "Liver_fibrosis")
 
@@ -393,7 +393,7 @@ Clean_Design <- subset(nhanesDesign, complete_case==1 & waist_to_hip_valid==1)
 ```{r}
 ## Table 3
 exposures <- c("education", "access_healthcare", "poverty",
-                      "viral", "waist_to_hip_cat", "diabetes", "alcohol_variable")
+                      "viral", "bmi2", "diabetes", "alcohol_variable")
 
 outcomes1 <- c("Liver_fat", "Liver_inflammation", "Liver_fibrosis")
 

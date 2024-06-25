@@ -38,6 +38,8 @@ data_nhanes_1 <- readRDS("proccessed_data/data_nhanes_processsed.rds")  %>%
                                   "Normal",
                                  "Overweight", 
                                  "Obesity"),
+           waist_to_hip_cat= fct_relevel(waist_to_hip_cat, "Less than 1",
+                                  "More than 1"),
            education=fct_relevel(education,
                                  "Completed High school or above",
                                  "Less than high school"), 
@@ -57,7 +59,7 @@ data_nhanes_1$poverty <- relevel(as.factor(data_nhanes_1$poverty), ref="No")
 data_nhanes_1$access_healthcare <- relevel(as.factor(data_nhanes_1$access_healthcare), ref="Yes")
 data_nhanes_1$education <- relevel(as.factor(data_nhanes_1$education),ref ="Completed High school or above")
 #data_nhanes_1$education3 <- relevel(as.factor(data_nhanes_1$education3),ref ="Some college or above")
-#data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
+data_nhanes_1$bmi2 <- relevel(as.factor(data_nhanes_1$bmi2),ref ="Normal")
 data_nhanes_1$waist_to_hip_cat <- relevel(as.factor(data_nhanes_1$waist_to_hip_cat), ref="Less than 1")
 data_nhanes_1$diabetes <- relevel(as.factor(data_nhanes_1$diabetes),ref ="No")
 data_nhanes_1$HepB_Status <- relevel(as.factor(data_nhanes_1$HepB_Status),ref ="No Hepatitis B")
@@ -92,7 +94,7 @@ age_prevalences_nhanes <- function(k, y, group=race){
   svystandardize(., by = ~age1, over = ~race,
                  # using NCHS standard population for ages 20-39, 40-59, 60+ https://www.cdc.gov/nchs/tutorials/NHANES/NHANESAnalyses/AgeStandardization/Task1b_SAS92.html
                  population = c(77670, 72816, 45364), 
-                 excluding.missing=~complete_case2) %>% 
+                 excluding.missing=~complete_case) %>% 
     #filter(complete_case==1) %>% 
     group_by({{group}}) %>% 
     summarize(estimate = survey_mean(!!k == y, na.rm = TRUE, vartype = "ci", proportion = TRUE)) %>% 
@@ -136,6 +138,9 @@ byrace <- left_join(byrace, age_prevalences_nhanes("education", "Completed High 
 byrace <- left_join(byrace, age_prevalences_nhanes("education", "Less than high school") %>% preproceso_tabla1("Less than high school"))
 byrace <- left_join(byrace, age_prevalences_nhanes("poverty", "Yes") %>% preproceso_tabla1("Poverty"))
 byrace <- left_join(byrace, age_prevalences_nhanes("access_healthcare", "No") %>% preproceso_tabla1("Lack of regular access to healthcare"))
+byrace <- left_join(byrace, age_prevalences_nhanes("waist_to_hip_cat", "More than 1") %>% preproceso_tabla1("More than 1"))
+byrace <- left_join(byrace, age_prevalences_nhanes("waist_to_hip_cat", "Less than 1") %>% preproceso_tabla1("Less than 1"))
+byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Underweight") %>% preproceso_tabla1("Underweight"))
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Underweight") %>% preproceso_tabla1("Underweight"))
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Normal") %>% preproceso_tabla1("Normal"))
 byrace <- left_join(byrace, age_prevalences_nhanes("bmi2", "Overweight") %>% preproceso_tabla1("Overweight"))
@@ -191,6 +196,14 @@ overall <- overall %>%
   
   left_join(age_prevalences_nhanes("access_healthcare", "No", group = "overall") %>% 
               preproceso_tabla1("Lack of regular access to healthcare") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("waist_to_hip_cat", "More than 1", group = "overall") %>% 
+              preproceso_tabla1("More than 1") %>% 
+                select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
+  
+  left_join(age_prevalences_nhanes("waist_to_hip_cat", "Less than 1", group = "overall") %>% 
+              preproceso_tabla1("Less than 1") %>% 
                 select(-`"overall"`) %>% mutate(race="overall"), by = "race") %>%
   
   left_join(age_prevalences_nhanes("bmi2", "Underweight", group = "overall") %>% 
@@ -439,5 +452,3 @@ preproceso_tabla1('More than 1')
 age_prevalences_nhanes('waist_to_hip_cat', "More than 1", group = "overall") %>% 
 preproceso_tabla1('More than 1')
 ```
-```
-
