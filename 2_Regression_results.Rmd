@@ -339,7 +339,7 @@ model_2a <- reggres("Liver_inflammation  ~ race + sex + age1 +
 
 model_2b <- reggres("Liver_inflammation  ~ race + sex + age1 + 
                                   education + access_healthcare + poverty + 
-                                  viral + bmi2 + diabetes + alcohol_variable")
+                                  viral + waist_to_hip_cat + diabetes + alcohol_variable")
 
 ## Liver Fibrosis
 model_3a <- reggres("Liver_fibrosis  ~ race + sex + age1 + 
@@ -348,7 +348,7 @@ model_3a <- reggres("Liver_fibrosis  ~ race + sex + age1 +
 
 model_3b <- reggres("Liver_fibrosis  ~ race + sex + age1 + 
                                        education + access_healthcare + poverty + 
-                                       viral + bmi2 + diabetes + alcohol_variable")
+                                       viral + waist_to_hip_cat + diabetes + alcohol_variable")
 
 prepo(model_1a) %>% rename("model_1a"="y") -> model_1a_table
 prepo(model_1b) %>% rename("model_1b"="y") -> model_1b_table
@@ -375,22 +375,12 @@ table2_appendix %>%
   knitr::kable()
 ```
 
-```{r}
 
-```
-
-Waist to Hip Ratio models -- Appendix 
-## Table 3 Appendix: 
-
-```{r}
-Clean_Design <- subset(nhanesDesign, complete_case==1 & waist_to_hip_valid==1)
-```
-
+## Supplemental Table 3 
 
 ```{r}
 ## Table 3
-exposures <- c("education", "access_healthcare", "poverty",
-                      "viral", "bmi2", "diabetes", "alcohol_variable")
+exposures <- c("waist_to_hip_cat", "bmi2")
 
 outcomes1 <- c("Liver_fat", "Liver_inflammation", "Liver_fibrosis")
 
