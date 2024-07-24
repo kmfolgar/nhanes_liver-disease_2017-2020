@@ -5,7 +5,7 @@ output: html_document
 
 ## Introduction
 
-This Rmd file aims to validate the creation of each variable in the NHANES 2017-2020 dataset.
+This Rmd file aims to validate the creation of each new variable in the NHANES 2017-2020 dataset.
 
 ```{r setup, include=FALSE}
 library(tidyverse)
@@ -15,6 +15,10 @@ library(nhanesA)
 ```
 
 ## Load NHANES 2017-2020 Data
+
+
+The following code opens the datasets, select the columns and using the nhanesA package finds all the appropriate labels for the categories. 
+
 
 ```{r load_data}
 ## Demographics 
@@ -236,7 +240,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(bmi = BMXBMI)
 
 summary(nhanes_2017_2020$bmi)
-
 ```
 
 ```{r}
@@ -257,8 +260,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(waist_to_hip_valid=if_else(!is.na(BMXWAIST) & !is.na(BMXHIP),1,0)) %>% 
   mutate(waist_to_hip = if_else(waist_to_hip_valid==1, BMXWAIST/BMXHIP, NA))
 
-#tabyl(nhanes_2017_2020$waist_to_hip)
-
 summary(nhanes_2017_2020$waist_to_hip)
 ```
 
@@ -269,8 +270,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 
 tabyl(nhanes_2017_2020$waist_to_hip_cat)
 ```
-
-
 
 ### Health Insurance
 
@@ -283,6 +282,7 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 
 tabyl(nhanes_2017_2020$health_insurance)
 ```
+
 ### Regular Access to Healthcare
 
 ```{r}
@@ -306,8 +306,10 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 
 nhanes_2017_2020 %>% 
   tabyl(access_healthcare, health_insurance)
+```
 
 
+```{r}
 nhanes_2017_2020 %>% 
   tabyl(access_healthcare, regular_healthcare)
 ```
@@ -325,7 +327,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 
 nhanes_2017_2020 %>% 
   tabyl(DIQ010, Diabetes_Doctor)
-
 ```
 
 ### Diabetes by Medication
@@ -339,7 +340,10 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 nhanes_2017_2020 %>% 
   filter(DIQ070=="Yes") %>% 
   tabyl(DIQ050, Diabetes_Meds)
+```
 
+
+```{r}
 nhanes_2017_2020 %>% 
   filter(DIQ070=="No") %>% 
   tabyl(DIQ050, Diabetes_Meds)
@@ -366,7 +370,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     Diabetes_Doctor == "No" & Diabetes_Lab == "No" ~ "No"))
 
 tabyl(nhanes_2017_2020$diabetes)
-
 ```
 
 ### Aware of Liver Disease
@@ -379,7 +382,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   ))
 
 tabyl(nhanes_2017_2020$aware_liver_disease)
-
 ```
 
 ### Hepatitis B Status
@@ -398,6 +400,10 @@ HepB_Status = case_when(HepB_Status2=="No Hepatitis B" ~ "No Hepatitis B",
                        HepB_Status2=="Immune" ~ "Immune"))
 
 tabyl(nhanes_2017_2020$HepB_Status2)
+```
+
+
+```{r}
 tabyl(nhanes_2017_2020$HepB_Status)
 ```
 
@@ -464,7 +470,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(alcohol_times = if_else(ALQ130 == 777 | ALQ130 == 999, NA_real_, ALQ130))
 
 tabyl(nhanes_2017_2020$alcohol_times)
-
 ```
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
@@ -525,7 +530,7 @@ tabyl(nhanes_2017_2020$moderate_drinkers)
 ```{r}
 nhanes_2017_2020 %>% 
   filter(binge_freq=="Yes") %>% 
-  tabyl(heavy_drinkers,moderate_drinkers)
+  tabyl(heavy_drinkers, moderate_drinkers)
 ```
 
 
@@ -564,7 +569,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   ))
 
 tabyl(nhanes_2017_2020$ALT_elevated)
-
 ```
 
 ### Elevated AST
@@ -576,7 +580,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   ))
 
 tabyl(nhanes_2017_2020$AST_elevated)
-
 ```
 
 
@@ -590,7 +593,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   ))
 
 tabyl(nhanes_2017_2020$Liver_fibrosis)
-
 ```
 
 
@@ -604,7 +606,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   ))
 
 tabyl(nhanes_2017_2020$Liver_fat)
-
 ```
 
 ### Liver Inflammation
