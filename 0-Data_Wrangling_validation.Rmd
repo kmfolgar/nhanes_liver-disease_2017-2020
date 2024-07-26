@@ -16,7 +16,6 @@ library(nhanesA)
 
 ## Load NHANES 2017-2020 Data
 
-
 The following code opens the datasets, select the columns and using the nhanesA package finds all the appropriate labels for the categories. 
 
 
@@ -131,23 +130,20 @@ demo_p %>%
   left_join(lux_p, by="SEQN") %>% 
   mutate_if(is.factor, as.character) -> nhanes
 
+nhanes %>% 
+  saveRDS("proccessed_data/data_nhanes_original.rds")
+
 rm(list = ls()[grepl("_", ls())])
 ```
 
-```{r}
-nhanes_2017_2020 <- nhanes
-```
 
-```{r}
-nhanes %>% 
-  saveRDS("proccessed_data/data_nhanes_original.rds")
+```{r load_data}
+nhanes_2017_2020 <- readRDS("proccessed_data/data_nhanes_original.rds")
 ```
 
 
 ## Create and Validate Variables
-
 ### Age Categories
-
 ```{r age_categories}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(age1 = case_when(
@@ -160,7 +156,6 @@ tabyl(nhanes_2017_2020$age1)
 ```
 
 ### Gender
-
 ```{r gender}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(sex = RIAGENDR)
@@ -169,7 +164,6 @@ tabyl(nhanes_2017_2020$sex)
 ```
 
 ### Race/Ethnicity
-
 ```{r race_ethnicity}
 # Your code for creating the 'race' variable
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
@@ -183,11 +177,10 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   ))
 
 nhanes_2017_2020 %>% 
-tabyl(RIDRETH3, race)
+  tabyl(RIDRETH3, race)
 ```
 
 ### Education (3 Categories)
-
 ```{r education3}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(education3 = case_when(
@@ -204,7 +197,6 @@ tabyl(DMDEDUC2, education3)
 ```
 
 ### Education
-
 ```{r education}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(education = case_when(
@@ -218,11 +210,9 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 
 nhanes_2017_2020 %>% 
   tabyl(DMDEDUC2, education)
-
 ```
 
 ### Poverty 
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(poverty = case_when(
@@ -234,7 +224,6 @@ tabyl(nhanes_2017_2020$poverty)
 ```
 
 ### BMI 
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(bmi = BMXBMI)
@@ -242,9 +231,10 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 summary(nhanes_2017_2020$bmi)
 ```
 
+### BMI Categories
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
-  mutate(bmi2 = case_when(BMXBMI<18.5              ~ "Underweight",
+  mutate(bmi2 = case_when(BMXBMI<18.5           ~ "Underweight",
                        BMXBMI>=18.5 & BMXBMI<25 ~ "Normal",
                        BMXBMI>=25   & BMXBMI<30 ~ "Overweight",
                        BMXBMI>=30               ~ "Obesity")) 
@@ -252,9 +242,7 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 tabyl(nhanes_2017_2020$bmi2)
 ```
 
-
 ### Waist-to-Hip Ratio
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>% 
   mutate(waist_to_hip_valid=if_else(!is.na(BMXWAIST) & !is.na(BMXHIP),1,0)) %>% 
@@ -262,7 +250,7 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 
 summary(nhanes_2017_2020$waist_to_hip)
 ```
-
+### Waist-to-Hip categories
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>% 
   mutate(waist_to_hip_cat=case_when(waist_to_hip_valid==1 & waist_to_hip>=1 ~ "More than 1",
@@ -272,7 +260,6 @@ tabyl(nhanes_2017_2020$waist_to_hip_cat)
 ```
 
 ### Health Insurance
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(health_insurance = case_when(
@@ -284,7 +271,6 @@ tabyl(nhanes_2017_2020$health_insurance)
 ```
 
 ### Regular Access to Healthcare
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(regular_healthcare = case_when(
@@ -292,13 +278,11 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     HUQ030 == "There is more than one place" | HUQ030 == "Yes" ~ "Yes"
   ))
 
-
 nhanes_2017_2020 %>% 
   tabyl(HUQ030, regular_healthcare)
 ```
 
-### Access to Healthcare
-
+### Real Access to Healthcare
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(access_healthcare = case_when(health_insurance == "Yes" & regular_healthcare == "Yes" ~ "Yes", 
@@ -316,7 +300,6 @@ nhanes_2017_2020 %>%
 
 
 ### Diabetes by Doctor
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(Diabetes_Doctor = case_when(
@@ -330,7 +313,6 @@ nhanes_2017_2020 %>%
 ```
 
 ### Diabetes by Medication
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(Diabetes_Meds = case_when(
@@ -351,7 +333,6 @@ nhanes_2017_2020 %>%
 
 
 ### Diabetes by Lab
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(Diabetes_Lab = case_when(
@@ -373,7 +354,6 @@ tabyl(nhanes_2017_2020$diabetes)
 ```
 
 ### Aware of Liver Disease
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(aware_liver_disease = case_when(
@@ -385,7 +365,6 @@ tabyl(nhanes_2017_2020$aware_liver_disease)
 ```
 
 ### Hepatitis B Status
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(HepB_Status2 = case_when(
@@ -402,13 +381,11 @@ HepB_Status = case_when(HepB_Status2=="No Hepatitis B" ~ "No Hepatitis B",
 tabyl(nhanes_2017_2020$HepB_Status2)
 ```
 
-
 ```{r}
 tabyl(nhanes_2017_2020$HepB_Status)
 ```
 
 ### Hepatitis C
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(HepC = case_when(
@@ -419,12 +396,10 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 
 nhanes_2017_2020 %>% 
   tabyl(LBDHCI, HepC)
-
 ```
 
 
 ### Viral Hepatitis
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(viral = case_when(
@@ -436,7 +411,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     (HepB_Status == "No Hepatitis B" | HepB_Status == "Immune") & HepC == "No Hepatitis C" ~ "No"))
 
 tabyl(nhanes_2017_2020$viral)
-
 ```
 
 
@@ -477,7 +451,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
 
 nhanes_2017_2020 %>% 
   tabyl(alcohol_factor,alcohol_times)
-
 ```
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>% 
@@ -535,7 +508,6 @@ nhanes_2017_2020 %>%
 
 
 ### Alcohol variable
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(alcohol_variable = case_when(
@@ -554,7 +526,6 @@ nhanes_2017_2020 %>%
   tabyl(moderate_drinkers,alcohol_variable)
 ```
 
-
 ```{r}
 nhanes_2017_2020 %>% 
   tabyl(ALQ121,alcohol_variable)
@@ -565,8 +536,7 @@ nhanes_2017_2020 %>%
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(ALT_elevated = case_when(
     (LBXSATSI >= 31 & RIAGENDR == "Female") | (LBXSATSI >= 40 & RIAGENDR == "Male") ~ "Yes",
-    (LBXSATSI < 31 & RIAGENDR == "Female") | (LBXSATSI < 40 & RIAGENDR == "Male") ~ "No"
-  ))
+    (LBXSATSI < 31 & RIAGENDR == "Female") | (LBXSATSI < 40 & RIAGENDR == "Male") ~ "No"))
 
 tabyl(nhanes_2017_2020$ALT_elevated)
 ```
@@ -576,34 +546,28 @@ tabyl(nhanes_2017_2020$ALT_elevated)
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(AST_elevated = case_when(
     (LBXSASSI >= 31 & RIAGENDR == "Female") | (LBXSASSI >= 37 & RIAGENDR == "Male") ~ "Yes",
-    (LBXSASSI < 31 & RIAGENDR == "Female") | (LBXSASSI < 37 & RIAGENDR == "Male") ~ "No"
-  ))
+    (LBXSASSI < 31 & RIAGENDR == "Female") | (LBXSASSI < 37 & RIAGENDR == "Male") ~ "No"))
 
 tabyl(nhanes_2017_2020$AST_elevated)
 ```
 
 
 ### Liver Fibrosis
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(Liver_fibrosis = case_when(
     LUXSMED >= 8.6 & LUAXSTAT == "Complete" ~ "Yes",
-    LUXSMED < 8.6 & LUAXSTAT == "Complete" ~ "No"
-  ))
+    LUXSMED < 8.6 & LUAXSTAT == "Complete" ~ "No"))
 
 tabyl(nhanes_2017_2020$Liver_fibrosis)
 ```
 
-
 ### Liver Fat
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(Liver_fat = case_when(
     LUXCAPM >= 311 & LUAXSTAT == "Complete" ~ "Yes",
-    LUXCAPM < 311 & LUAXSTAT == "Complete" ~ "No"
-  ))
+    LUXCAPM < 311 & LUAXSTAT == "Complete" ~ "No"))
 
 tabyl(nhanes_2017_2020$Liver_fat)
 ```
@@ -619,11 +583,9 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   ))
 
 tabyl(nhanes_2017_2020$Liver_inflammation)
-
 ```
 
 ### Complete case (Waist_to_Hip)
-
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(complete_case = case_when(
@@ -644,15 +606,12 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
     !is.na(Liver_fat) & 
     !is.na(Liver_inflammation) &
     !is.na(Liver_fibrosis) & 
-    (RIDAGEYR >= 20 & RIDSTATR=="Both interviewed and MEC examined") ~ 1
-  ))
+    (RIDAGEYR >= 20 & RIDSTATR=="Both interviewed and MEC examined") ~ 1))
 
 tabyl(nhanes_2017_2020$complete_case)
-
 ```
 
-### Complete case (Waist to hip)
-
+### Complete case (BMI)
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(complete_case2 = case_when(
@@ -676,7 +635,6 @@ nhanes_2017_2020 <- nhanes_2017_2020 %>%
   ))
 
 tabyl(nhanes_2017_2020$complete_case2)
-
 ```
 
 ## Final Dataset
@@ -693,11 +651,23 @@ nhanes_2017_2020 %>%
 nhanes_2017_2020 %>% dim()
 ```
 ```{r}
-nhanes_2017_2020 %>% filter(!is.na(age1) & !is.na(sex) & RIDAGEYR >= 20 & RIDSTATR=="Both interviewed and MEC examined") %>% dim()
+nhanes_2017_2020 %>% 
+  filter(!is.na(age1) & 
+           !is.na(sex) & 
+           RIDAGEYR >= 20 & 
+           RIDSTATR=="Both interviewed and MEC examined") %>% 
+  dim()
 ```
 
 ```{r}
-nhanes_2017_2020 %>% filter(!is.na(age1) & !is.na(sex) & RIDAGEYR >= 20 & RIDSTATR=="Both interviewed and MEC examined" & !is.na(education) & !is.na(poverty)) %>% dim()
+nhanes_2017_2020 %>% 
+  filter(!is.na(age1) & 
+           !is.na(sex) & 
+           RIDAGEYR >= 20 & 
+           RIDSTATR=="Both interviewed and MEC examined" & 
+           !is.na(education) & 
+           !is.na(poverty)) %>% 
+  dim()
 ```
 
 
@@ -716,7 +686,6 @@ nhanes_2017_2020 %>% filter(!is.na(age1) &
                               !is.na(viral) & 
                               !is.na(alcohol_variable)) %>% 
   dim()
-
 ```
 
 ```{r}
