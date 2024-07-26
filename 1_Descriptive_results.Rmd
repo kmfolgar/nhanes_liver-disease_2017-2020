@@ -305,7 +305,9 @@ byrace %>%
   t() %>%
   data.frame() %>%
   row_to_names(row_number = 1) %>% 
-  select(Hispanic, `Non-Hispanic Asian`, `Non-Hispanic Black`, `Non-Hispanic White`, `Other Race`, overall) %>% 
+  select(Hispanic, `Non-Hispanic Asian`, 
+         `Non-Hispanic Black`, `Non-Hispanic White`, 
+         `Other Race`, overall) %>% 
   write.csv("plots_tables/table1_2.csv")
 ```
 
@@ -418,18 +420,18 @@ ggsave("plots_tables/Figure 1_prevalence_plot2.png", scale=1.4, width = 12, heig
 ## Sensitivity Analysis with Hip/Waist Ratio
 
 ```{r}
-summary(nhanes_2017_2020$waist_to_hip)
+summary(data_nhanes_1$waist_to_hip)
 ```
 
 
 ```{r}
-nhanes_2017_2020 %>% 
+data_nhanes_1 %>% 
   ggplot(aes(y=waist_to_hip, x=bmi, color=bmi2)) +
   geom_point() +
   facet_wrap(~sex)
 ```
 ```{r}
-nhanes_2017_2020 %>% 
+data_nhanes_1 %>% 
   ggplot(aes(x=waist_to_hip, y=bmi, color=bmi2)) +
   geom_point() +
   facet_wrap(~race)
@@ -437,7 +439,7 @@ nhanes_2017_2020 %>%
 
 
 ```{r}
-nhanes_2017_2020 %>% 
+data_nhanes_1 %>% 
   ggplot(aes(x=waist_to_hip, y=bmi, color=Liver_fat)) +
   geom_point() +
   facet_wrap(~race)
