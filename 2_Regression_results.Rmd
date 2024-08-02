@@ -198,7 +198,7 @@ table3 %>%
 
 ```{r}
 exposures <- c("education", "access_healthcare", "poverty",
-                      "viral", "waist_to_hip_cat", "diabetes", "alcohol_variable")
+                      "waist_to_hip_cat", "bmi2", "diabetes", "viral", "alcohol_variable")
 
 outcomes1 <- c("Liver_fat", "Liver_inflammation", "Liver_fibrosis")
 
@@ -274,6 +274,9 @@ lista_modelos1 %>%
 table3_appendix %>% write.csv("plots_tables/table3_appendix_race_adjusted.csv")
 table3_appendix %>% knitr::kable()
 ```
+
+## Supplemental Table 2: Sensitivity BMI - Waist to Hip 
+
 ```{r}
 reggres <- function(x, data = nhanesDesign, design = Clean_Design) {
   y <- as.formula(x)
@@ -316,11 +319,8 @@ prepo <- function(x){
   return(final)
 
   }
-
 ```
 
-
-## Supplemental Table 2: Sensitivity BMI - Waist to Hip 
 
 ```{r}
 ## Liver Fat 
@@ -373,187 +373,4 @@ table2_appendix %>%
 table2_appendix %>% 
   select(Hispanic, `Non-Hispanic Asian`, `Non-Hispanic Black`, `Other Race`) %>% 
   knitr::kable()
-```
-
-
-## Supplemental Table 3 
-
-```{r}
-## Table 3
-exposures <- c("waist_to_hip_cat", "bmi2")
-
-outcomes1 <- c("Liver_fat", "Liver_inflammation", "Liver_fibrosis")
-
-
-map(outcomes1, function(outcome){
-  t<- map(exposures, function(exposure){
-    #outcome<-outcomes1[[1]];exposure<-exposures[[1]]
-      t <- paste0(outcome,"~",exposure,"+ sex + age1") %>% as.formula()
-      
-      output <- reggres(t) %>% 
-                mutate(estimate=formatC(estimate, format="f", digits=2),
-                       CI_down=formatC(CI_down, format="f", digits=2),
-                       CI_upper=formatC(CI_upper, format="f", digits=2))
-  
-      output$y <- paste0(output$estimate, " (", output$CI_down,", ",output$CI_upper,")")
-  
-      output %>% 
-        filter(grepl(exposure, term)) %>% 
-        select(term, y) %>% 
-        rename(model1=y) -> model_1
-      
-      
-      t <- paste0(outcome,"~",exposure,"+ sex + age1 + race") %>% as.formula()
-      output <- reggres(t) %>% 
-                mutate(estimate=formatC(estimate, format="f", digits=2),
-                       CI_down=formatC(CI_down, format="f", digits=2),
-                       CI_upper=formatC(CI_upper, format="f", digits=2))
-      output$y <- paste0(output$estimate, " (", output$CI_down,", ",output$CI_upper,")")
-      
-            output %>% 
-        filter(grepl(exposure, term)) %>% 
-        select(term, y) %>% 
-        rename(model2=y) -> model_2
-            
-            
-        model_1 %>% 
-          left_join(model_2) %>% 
-          mutate(exposure=exposure, 
-                 outcome=outcome)-> final
-  
-      return(final)
-    
-  })
-}) -> lista_modelos1
-
-lista_modelos1
-
-lista_modelos1 %>% 
-  reduce(bind_rows) %>% 
-  ungroup() %>% 
-  pivot_wider(names_from = outcome, values_from = c(model1, model2)) %>% 
-  select(term,
-         model1_Liver_fat,
-         model1_Liver_inflammation, 
-         model1_Liver_fibrosis) -> table4
-
-table4 %>% write.csv("plots_tables/table3_appendix.csv")
-table4 %>% knitr::kable()
-```
-
-
-
-```{r}
-#exposures <- c("education", 
-#               "access_healthcare", 
-#               "poverty",
-#               "viral", 
-#               "bmi2", 
-#               "diabetes", 
-#               "alcohol_variable")
-#
-#outcomes1 <- c("Liver_inflammation", "Liver_fat", "Liver_fibrosis")
-#
-#map(outcomes1, function(outcome){
-#  t<- map(exposures, function(exposure){
-#      y <- paste0(outcome,"~",exposure,"+ sex + age1 + race") %>% as.formula()
-#      svyglm(y,
-#          family = quasipoisson(),
-#          design = Clean_Design) -> model1
-#  
-#      y <- paste0(outcome,"~ sex + age1 +",exposure,"*race") %>% as.formula()
-#      
-#     svyglm(y,
-#          family = quasipoisson(),
-#          design = Clean_Design) -> model2
-#            
-#     
-#    return(list(model1=model1, model2=model2, outcome=outcome, exposure=exposure))
-#    
-#  })
-#}) -> lista_modelos2
-#
-##convergence<-map_dfr(lista_modelos2, function(lista){
-##  map_dfr(lista, function(temp){
-##          #temp<-lista_modelos2[[1]][[1]]
-##          inf1<-tidy(temp$model1) %>% pull(std.error) %>% is.infinite() %>% sum
-##          inf2<-tidy(temp$model2) %>% pull(std.error) %>% is.infinite() %>% sum
-##          data.frame(exposure=temp$exposure, outcome=temp$outcome,
-##                     inf1=inf1, inf2=inf2)
-##        })
-##}) %>% 
-##  filter(inf1>0|inf2>0)
-##convergence
-#
-#
-## issues in the three outcomes with alcohol_variable
-## comparison: is int stat signf?
-#int_sign<-map_dfr(lista_modelos2, function(lista){
-#  map_dfr(lista, function(temp){
-#          #temp<-lista_modelos2[[2]][[3]]
-#        lrt<-tryCatch(expr= {anova(temp$model1, temp$model2)},error= function(x) NA)
-#    if (is.na(lrt)){
-#      pval<-NA
-#    } else {
-#      pval<-lrt$p
-#    }
-#          data.frame(exposure=temp$exposure, outcome=temp$outcome,pval=pval)
-#        })
-#}) %>% 
-#  mutate(pval=ifelse(pval<0.001, "<0.001", format(pval, digits=3, nsmall=3))) %>% 
-#  pivot_wider(id_cols=exposure, names_from=outcome, values_from=pval)
-#int_sign
-#
-#
-#lista_modelos1 %>% 
-#  reduce(bind_rows) #%>% 
-#  pivot_wider(term, outcome, values_from = c(model1, model2)) %>% 
-#  select(term,
-#         model1_Liver_fat,
-#         model2_Liver_fat,
-#         model1_Liver_inflammation, 
-#         model2_Liver_inflammation,
-#         model1_Liver_fibrosis,
-#         model2_Liver_fibrosis)
-```
-
-```{r}
-#
-#
-#svyglm(Liver_inflammation ~ sex + age1 + health_insurance*race,
-#          family = quasipoisson(),
-#          data   = data_nhanes_1,
-#          design = Clean_Design) -> model1
-#
-#svyglm(Liver_inflammation ~ sex + age1 + health_insurance,
-#          family = quasipoisson(),
-#          data   = data_nhanes_1,
-#          design = Clean_Design) -> model2
-#
-#anova(model1, model2) -> t1
-#AIC(model1, model2)
-#
-```
-
-
-```{r}
-
-#svyglm("Liver_inflammation ~ alcohol_variable",family=binomial ,
-#          data = nhanesDesign, design = Clean_Design) %>% summary()
-#
-#svyglm("Liver_inflammation ~ alcohol_variable",family=quasipoisson() ,
-#          data = nhanesDesign, design = Clean_Design) %>% summary()
-#
-#svyglm("LUXSMED ~ alcohol_drinks_week",
-#          data = nhanesDesign, design = Clean_Design) %>% summary()
-#
-#data_nhanes_1 %>% 
-#ggplot(aes(x=alcohol_drinks_day, y=LUXSMED, color=race)) +
-#  geom_point()
-#
-#
-#data_nhanes_1 %>% 
-#ggplot(aes(x=alcohol_drinks_week, y=LUXCAPM, color=race, size=WTMEC2YR)) +
-#  geom_point()
-#
 ```

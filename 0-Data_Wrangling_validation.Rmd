@@ -380,6 +380,9 @@ HepB_Status = case_when(HepB_Status2=="No Hepatitis B" ~ "No Hepatitis B",
 
 tabyl(nhanes_2017_2020$HepB_Status2)
 ```
+```{r}
+nhanes_2017_2020 %>% tabyl(race,HepB_Status)
+```
 
 ```{r}
 tabyl(nhanes_2017_2020$HepB_Status)
@@ -403,8 +406,7 @@ nhanes_2017_2020 %>%
 ```{r}
 nhanes_2017_2020 <- nhanes_2017_2020 %>%
   mutate(viral = case_when(
-    HepB_Status == "Past Hepatitis B" | 
-      HepB_Status == "Chronic Hepatitis B" | 
+    HepB_Status == "Exposure to HBV" | 
       HepC == "Positive Anti-HCV but no RNA" | 
       HepC == "Current Infection" ~ "Yes",
     
